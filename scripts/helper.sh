@@ -113,7 +113,7 @@ function cdt-directory-prompt() {
 
 # Ensures EOSIO is installed and compatible via version listed in tests/CMakeLists.txt.
 function nodeos-version-check() {
-  INSTALLED_VERSION=$(echo $($EOSIO_INSTALL_DIR/bin/nodeos --version))
+  INSTALLED_VERSION=$(echo $($EOSIO_INSTALL_DIR/bin/remnode --version))
   INSTALLED_VERSION_MAJOR=$(echo $INSTALLED_VERSION | cut -f1 -d '.' | sed 's/v//g')
   INSTALLED_VERSION_MINOR=$(echo $INSTALLED_VERSION | cut -f2 -d '.' | sed 's/v//g')
 
@@ -122,16 +122,16 @@ function nodeos-version-check() {
     exit 1;
   fi
 
-  if $(check-version-numbers $INSTALLED_VERSION_MAJOR $INSTALLED_VERSION_MINOR); then
-    if [[ $INSTALLED_VERSION_MAJOR -gt $EOSIO_SOFT_MAX_MAJOR ]]; then
-      echo "Detected EOSIO version is greater than recommended soft max: $EOSIO_SOFT_MAX_MAJOR.$EOSIO_SOFT_MAX_MINOR. Proceed with caution."
-    fi
-    if [[ $INSTALLED_VERSION_MAJOR -eq $EOSIO_SOFT_MAX_MAJOR && $INSTALLED_VERSION_MINOR -gt $EOSIO_SOFT_MAX_MINOR ]]; then
-      echo "Detected EOSIO version is greater than recommended soft max: $EOSIO_SOFT_MAX_MAJOR.$EOSIO_SOFT_MAX_MINOR. Proceed with caution."
-    fi
-  else
-    echo "Supported versions are: $EOSIO_MIN_VERSION_MAJOR.$EOSIO_MIN_VERSION_MINOR - $EOSIO_MAX_VERSION_MAJOR.$EOSIO_MAX_VERSION_MINOR"
-    echo "Invalid EOSIO installation. Exiting..."
-    exit 1;
-  fi
+#  if $(check-version-numbers $INSTALLED_VERSION_MAJOR $INSTALLED_VERSION_MINOR); then
+ #   if [[ $INSTALLED_VERSION_MAJOR -gt $EOSIO_SOFT_MAX_MAJOR ]]; then
+#      echo "Detected EOSIO version is greater than recommended soft max: $EOSIO_SOFT_MAX_MAJOR.$EOSIO_SOFT_MAX_MINOR. Proceed with caution."
+#    fi
+#    if [[ $INSTALLED_VERSION_MAJOR -eq $EOSIO_SOFT_MAX_MAJOR && $INSTALLED_VERSION_MINOR -gt $EOSIO_SOFT_MAX_MINOR ]]; then
+#      echo "Detected EOSIO version is greater than recommended soft max: $EOSIO_SOFT_MAX_MAJOR.$EOSIO_SOFT_MAX_MINOR. Proceed with caution."
+#    fi
+#  else
+#    echo "Supported versions are: $EOSIO_MIN_VERSION_MAJOR.$EOSIO_MIN_VERSION_MINOR - $EOSIO_MAX_VERSION_MAJOR.$EOSIO_MAX_VERSION_MINOR"
+#    echo "Invalid EOSIO installation. Exiting..."
+#    exit 1;
+#  fi
 }

@@ -30,8 +30,8 @@ public:
                                  ("is_priv", 1)
       );
 
-      set_code( N(eosio.msig), contracts::msig_wasm() );
-      set_abi( N(eosio.msig), contracts::msig_abi().data() );
+      set_code( N(eosio.msig), contracts::rem_msig_wasm() );
+      set_abi( N(eosio.msig), contracts::rem_msig_abi().data() );
 
       produce_blocks();
 

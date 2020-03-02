@@ -29,8 +29,8 @@ public:
                                             ("is_priv", 1)
       );
 
-      set_code( N(eosio.msig), contracts::msig_wasm() );
-      set_abi( N(eosio.msig), contracts::msig_abi().data() );
+      set_code( N(eosio.msig), contracts::rem_msig_wasm() );
+      set_abi( N(eosio.msig), contracts::rem_msig_abi().data() );
 
       produce_blocks();
       const auto& accnt = control->db().get<account_object,by_name>( N(eosio.msig) );
@@ -422,16 +422,16 @@ BOOST_FIXTURE_TEST_CASE( update_system_contract_all_approve, eosio_msig_tester )
    produce_blocks(50);
 
    create_accounts( { N(eosio.token), N(eosio.rex) } );
-   set_code( N(eosio.token), contracts::token_wasm() );
-   set_abi( N(eosio.token), contracts::token_abi().data() );
+   set_code( N(eosio.token), contracts::rem_token_wasm() );
+   set_abi( N(eosio.token), contracts::rem_token_abi().data() );
 
    create_currency( N(eosio.token), config::system_account_name, core_sym::from_string("10000000000.0000") );
    issue(config::system_account_name, core_sym::from_string("1000000000.0000"));
    BOOST_REQUIRE_EQUAL( core_sym::from_string("1000000000.0000"),
                         get_balance(config::system_account_name) + get_balance(N(eosio.ramfee)) + get_balance(N(eosio.stake)) + get_balance(N(eosio.ram)) );
 
-   set_code( config::system_account_name, contracts::system_wasm() );
-   set_abi( config::system_account_name, contracts::system_abi().data() );
+   set_code( config::system_account_name, contracts::rem_system_wasm() );
+   set_abi( config::system_account_name, contracts::rem_system_abi().data() );
    base_tester::push_action( config::system_account_name, N(init),
                              config::system_account_name,  mutable_variant_object()
                               ("version", 0)
@@ -548,15 +548,15 @@ BOOST_FIXTURE_TEST_CASE( update_system_contract_major_approve, eosio_msig_tester
    produce_blocks(50);
 
    create_accounts( { N(eosio.token), N(eosio.rex) } );
-   set_code( N(eosio.token), contracts::token_wasm() );
-   set_abi( N(eosio.token), contracts::token_abi().data() );
+   set_code( N(eosio.token), contracts::rem_token_wasm() );
+   set_abi( N(eosio.token), contracts::rem_token_abi().data() );
 
    create_currency( N(eosio.token), config::system_account_name, core_sym::from_string("10000000000.0000") );
    issue(config::system_account_name, core_sym::from_string("1000000000.0000"));
    BOOST_REQUIRE_EQUAL( core_sym::from_string("1000000000.0000"), get_balance( config::system_account_name ) );
 
-   set_code( config::system_account_name, contracts::system_wasm() );
-   set_abi( config::system_account_name, contracts::system_abi().data() );
+   set_code( config::system_account_name, contracts::rem_system_wasm() );
+   set_abi( config::system_account_name, contracts::rem_system_abi().data() );
    base_tester::push_action( config::system_account_name, N(init),
                              config::system_account_name,  mutable_variant_object()
                                  ("version", 0)
@@ -774,8 +774,8 @@ BOOST_FIXTURE_TEST_CASE( approve_execute_old, eosio_msig_tester ) try {
                   ("requested", vector<permission_level>{{ N(alice), config::active_name }})
    );
 
-   set_code( N(eosio.msig), contracts::msig_wasm() );
-   set_abi( N(eosio.msig), contracts::msig_abi().data() );
+   set_code( N(eosio.msig), contracts::rem_msig_wasm() );
+   set_abi( N(eosio.msig), contracts::rem_msig_abi().data() );
    produce_blocks();
 
    //approve and execute with new version
@@ -826,8 +826,8 @@ BOOST_FIXTURE_TEST_CASE( approve_unapprove_old, eosio_msig_tester ) try {
                   ("level",         permission_level{ N(alice), config::active_name })
    );
 
-   set_code( N(eosio.msig), contracts::msig_wasm() );
-   set_abi( N(eosio.msig), contracts::msig_abi().data() );
+   set_code( N(eosio.msig), contracts::rem_msig_wasm() );
+   set_abi( N(eosio.msig), contracts::rem_msig_abi().data() );
    produce_blocks();
 
    //unapprove with old version
@@ -868,8 +868,8 @@ BOOST_FIXTURE_TEST_CASE( approve_by_two_old, eosio_msig_tester ) try {
                   ("level",         permission_level{ N(alice), config::active_name })
    );
 
-   set_code( N(eosio.msig), contracts::msig_wasm() );
-   set_abi( N(eosio.msig), contracts::msig_abi().data() );
+   set_code( N(eosio.msig), contracts::rem_msig_wasm() );
+   set_abi( N(eosio.msig), contracts::rem_msig_abi().data() );
    produce_blocks();
 
    //fail because approval by bob is missing
