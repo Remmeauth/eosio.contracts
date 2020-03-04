@@ -1,7 +1,7 @@
 #pragma once
 #include <eosio/testing/tester.hpp>
 
-#define CORE_SYM_NAME "${CORE_SYMBOL_NAME}"
+#define CORE_SYM_NAME "SYS"
 #define CORE_SYM_PRECISION 4
 
 #define _STRINGIZE1(x) #x
@@ -46,9 +46,9 @@ struct contracts {
       static std::vector<uint8_t> system_wasm_v1_8() { return read_wasm("${CMAKE_SOURCE_DIR}/test_contracts/old_versions/v1.8.3/rem.system/rem.system.wasm"); }
       static std::vector<char>    system_abi_v1_8() { return read_abi("${CMAKE_SOURCE_DIR}/test_contracts/old_versions/v1.8.3/rem.system/rem.system.abi"); }
       static std::vector<uint8_t> system_wasm_old() { return read_wasm("${CMAKE_SOURCE_DIR}/test_contracts/old_versions/v1.2.1/rem.system/rem.system.wasm"); }
-      static std::vector<char>    system_abi_old() { return read_abi("${CMAKE_SOURCE_DIR}/test_contracts/old_versions/v1.2.1/rem.system/rem.system.abi"); }
-      static std::vector<uint8_t> msig_wasm_old() { return read_wasm("${CMAKE_SOURCE_DIR}/test_contracts/old_versions/v1.2.1/rem.msig/rem.msig.wasm"); }
-      static std::vector<char>    msig_abi_old() { return read_abi("${CMAKE_SOURCE_DIR}/test_contracts/old_versions/v1.2.1/rem.msig/rem.msig.abi"); }
+      static std::vector<char>    system_abi_old() { return read_abi("${CMAKE_SOURCE_DIR}/test_contracts/old_versions/v1.2.1/eosio.system/eosio.system.abi"); }
+      static std::vector<uint8_t> msig_wasm_old() { return read_wasm("${CMAKE_SOURCE_DIR}/test_contracts/old_versions/v1.2.1/eosio.msig/eosio.msig.wasm"); }
+      static std::vector<char>    msig_abi_old() { return read_abi("${CMAKE_SOURCE_DIR}/test_contracts/old_versions/v1.2.1/eosio.msig/eosio.msig.abi"); }
    };
 };
 }} //ns eosio::testing
