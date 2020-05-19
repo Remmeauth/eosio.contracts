@@ -4,7 +4,7 @@ set -eo pipefail
 . ./.cicd/helpers/general.sh
 . ./.cicd/helpers/dependency-info.sh
 mkdir -p $BUILD_DIR
-DOCKER_IMAGE=${DOCKER_IMAGE:-eosio/ci-contracts-builder:base-ubuntu-18.04-$SANITIZED_EOSIO_VERSION}
+DOCKER_IMAGE=${DOCKER_IMAGE:-remme/ci:remprotocol-ubuntu-18.04-unpinned}
 if [[ "$BUILDKITE" == 'true' ]]; then
     buildkite-agent meta-data set cdt-url "$CDT_URL"
     buildkite-agent meta-data set cdt-version "$CDT_VERSION"
@@ -16,7 +16,7 @@ else
 fi
 ARGS=${ARGS:-"--rm -v $(pwd):$MOUNTED_DIR"}
 CDT_COMMANDS="dpkg -i $MOUNTED_DIR/eosio.cdt.deb && export PATH=/usr/opt/eosio.cdt/\\\$(ls /usr/opt/eosio.cdt/)/bin:\\\$PATH"
-PRE_COMMANDS="$CDT_COMMANDS && cd /root/eosio/ && printf \\\"EOSIO commit: \\\$(git rev-parse --verify HEAD). Click \033]1339;url=https://github.com/EOSIO/eos/commit/\\\$(git rev-parse --verify HEAD);content=here\a for details.\n\\\" && cd $MOUNTED_DIR/build"
+PRE_COMMANDS="$CDT_COMMANDS && cd /root/remprotocol/ && printf \\\"Remprotocol commit: \\\$(git rev-parse --verify HEAD). Click \033]1339;url=https://github.com/Remmeauth/remprotocol/commit/\\\$(git rev-parse --verify HEAD);content=here\a for details.\n\\\" && cd $MOUNTED_DIR/build"
 BUILD_COMMANDS="cmake -DBUILD_TESTS=true .. && make -j $JOBS"
 COMMANDS="$PRE_COMMANDS && $BUILD_COMMANDS"
 # Test CDT binary download to prevent failures due to eosio.cdt pipeline.
@@ -44,3 +44,9 @@ done
 # run
 echo "docker run $ARGS $(buildkite-intrinsics) $DOCKER_IMAGE bash -c \"$COMMANDS\""
 eval docker run $ARGS $(buildkite-intrinsics) $DOCKER_IMAGE bash -c \"$COMMANDS\"
+
+EXIT_STATUS=$?
+if [[ "$EXIT_STATUS" != 0 ]]; then
+    echo "Failing due to non-zero exit status from build: $EXIT_STATUS"
+    exit $EXIT_STATUS
+fi

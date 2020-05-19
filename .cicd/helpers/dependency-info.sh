@@ -17,7 +17,7 @@ fi
 # search GitHub for commit hash by tag and branch, preferring tag if both match
 if [[ "$BUILDKITE" == 'true' ]]; then
     CDT_COMMIT=$((curl -s https://api.github.com/repos/EOSIO/eosio.cdt/git/refs/tags/$CDT_VERSION && curl -s https://api.github.com/repos/EOSIO/eosio.cdt/git/refs/heads/$CDT_VERSION) | jq '.object.sha' | sed "s/null//g" | sed "/^$/d" | tr -d '"' | sed -n '1p')
-    EOSIO_COMMIT=$((curl -s https://api.github.com/repos/EOSIO/eos/git/refs/tags/$EOSIO_VERSION && curl -s https://api.github.com/repos/EOSIO/eos/git/refs/heads/$EOSIO_VERSION) | jq '.object.sha' | sed "s/null//g" | sed "/^$/d" | tr -d '"' | sed -n '1p')
+    EOSIO_COMMIT=$((curl -s https://api.github.com/repos/Remmeauth/remprotocol/git/refs/tags/$EOSIO_VERSION && curl -s https://api.github.com/repos/Remmeauth/remprotocol/git/refs/heads/$EOSIO_VERSION) | jq '.object.sha' | sed "s/null//g" | sed "/^$/d" | tr -d '"' | sed -n '1p')
     test -z "$CDT_COMMIT" && CDT_COMMIT=$(echo $CDT_VERSION | tr -d '"' | tr -d "''" | cut -d ' ' -f 1) # if both searches returned nothing, the version is probably specified by commit hash already
     test -z "$EOSIO_COMMIT" && EOSIO_COMMIT=$(echo $EOSIO_VERSION | tr -d '"' | tr -d "''" | cut -d ' ' -f 1) # if both searches returned nothing, the version is probably specified by commit hash already
 else
@@ -25,15 +25,16 @@ else
     git pull && git checkout $CDT_VERSION
     CDT_COMMIT=$(git rev-parse --verify HEAD)
     cd ..
-    git clone https://github.com/EOSIO/eos && cd eos
-    git pull && git checkout $EOSIO_VERSION
+    git clone https://github.com/Remmeauth/remprotocol && cd remprotocol
+    # TODO: change feature_migrate_contracts -> $EOSIO_VERSION after merging feature_migrate_contracts to develop
+    git pull && git checkout feature_migrate_contracts
     EOSIO_COMMIT=$(git rev-parse --verify HEAD)
     cd ..
 fi
 if [[ "$EOSIO_COMMIT" == "$EOSIO_VERSION" ]]; then
-    EOSIO_BK_URL="https://buildkite.com/EOSIO/eosio/builds?commit=${EOSIO_COMMIT}"
+    EOSIO_BK_URL="https://buildkite.com/Remmeauth/remprotocol/builds?commit=${EOSIO_COMMIT}"
 else
-    EOSIO_BK_URL="https://buildkite.com/EOSIO/eosio/builds?branch=${EOSIO_VERSION}"
+    EOSIO_BK_URL="https://buildkite.com/Remmeauth/remprotocol/builds?branch=${EOSIO_VERSION}"
 fi
 echo "Using eosio \"$EOSIO_VERSION\"..."
 echo "Using cdt ${CDT_COMMIT} from \"$CDT_VERSION\"..."
