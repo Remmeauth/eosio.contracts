@@ -9,7 +9,7 @@ if [[ "$BUILDKITE" == 'true' ]]; then
     DOCKER_IMAGE="$(buildkite-agent meta-data get docker-image)"
 else # Actions
     . ./.cicd/helpers/dependency-info.sh
-    DOCKER_IMAGE=${DOCKER_IMAGE:-eosio/ci-contracts-builder:base-ubuntu-18.04-$SANITIZED_EOSIO_VERSION}
+    DOCKER_IMAGE=${DOCKER_IMAGE:-remme/ci:remprotocol-ubuntu-18.04-unpinned}
 fi
 ARGS=${ARGS:-"--rm -v $(pwd):$MOUNTED_DIR"}
 CDT_COMMANDS="dpkg -i $MOUNTED_DIR/eosio.cdt.deb && export PATH=/usr/opt/eosio.cdt/$CDT_VERSION/bin:\\\$PATH"
