@@ -26,8 +26,7 @@ else
     CDT_COMMIT=$(git rev-parse --verify HEAD)
     cd ..
     git clone https://github.com/Remmeauth/remprotocol && cd remprotocol
-    # TODO: change feature_migrate_contracts -> $EOSIO_VERSION after merging feature_migrate_contracts to develop
-    git pull && git checkout feature_migrate_contracts
+    git pull && git checkout $EOSIO_VERSION
     EOSIO_COMMIT=$(git rev-parse --verify HEAD)
     cd ..
 fi
