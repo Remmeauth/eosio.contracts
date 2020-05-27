@@ -127,6 +127,12 @@ public:
       return r;
    }
 
+   auto set_activated_stake() {
+      auto r = base_tester::push_action(config::system_account_name, N(setactvstake), config::system_account_name, mvo());
+      produce_block();
+      return r;
+   }
+
    auto register_producer(name producer) {
       auto r = base_tester::push_action(config::system_account_name, N(regproducer), producer, mvo()
          ("producer",  name(producer))
@@ -830,6 +836,12 @@ BOOST_FIXTURE_TEST_CASE( new_active_prod_test, rotation_tester ) {
                         }
             )
          );
+      }
+
+      // Test setactvstake action
+      {
+         set_activated_stake();
+         BOOST_TEST(get_global_state()["total_activated_stake"].as<int64_t>() == 150'000'000'0000);
       }
 
    } FC_LOG_AND_RETHROW()
