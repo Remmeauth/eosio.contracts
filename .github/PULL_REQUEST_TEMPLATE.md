@@ -5,19 +5,15 @@
 <!-- Describe your changes, their justification, AND their impact. Reference issues or pull requests where possible (use '#XX' or 'GH-XX' where XX is the issue or pull request number). -->
 
 
-## Deployment Changes
-- [ ] Deployment Changes
-<!-- checked [x] = Deployment changes; unchecked [ ] = no changes, ignore this section -->
-<!-- If this PR introduces a change to the contracts that causes deployment to change, please describe the impact. -->
-
-
-## API Changes
-- [ ] API Changes
-<!-- checked [x] = API changes; unchecked [ ] = no changes, ignore this section -->
-<!-- If this PR introduces API changes, please describe the changes here. What will developers need to know before upgrading to this version? -->
+## Implemented
+— Add.. — Create..
 
 
 ## Documentation Additions
-- [ ] Documentation Additions
 <!-- checked [x] = Documentation changes; unchecked [ ] = no changes, ignore this section -->
 <!-- Describe what must be added to the documentation after merge. -->
+
+
+### References
+- Subject — https://github.com
+- Subject — https://github.com

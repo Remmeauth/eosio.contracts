@@ -1,22 +1,27 @@
-# eosio.contracts
+# rem.contracts
 
-## Version : 1.9.1
+## Version : 0.9.0
 
-The design of the EOSIO blockchain calls for a number of smart contracts that are run at a privileged permission level in order to support functions such as block producer registration and voting, token staking for CPU and network bandwidth, RAM purchasing, multi-sig, etc.  These smart contracts are referred to as the bios, system, msig, wrap (formerly known as sudo) and token contracts.
+The design of the Remprotocol blockchain calls for a number of smart contracts that are run at a privileged permission level in order to support functions such as block producer registration and voting, token staking bandwidth, multi-sig, etc. These smart contracts are referred to as the bios, system, msig, wrap (formerly known as sudo) and token contracts.
 
-This repository contains examples of these privileged contracts that are useful when deploying, managing, and/or using an EOSIO blockchain.  They are provided for reference purposes:
+This repository contains examples of these privileged contracts that are useful when deploying, managing, and/or using an Remprotocol blockchain.  They are provided for reference purposes:
 
-   * [eosio.bios](./contracts/eosio.bios)
-   * [eosio.system](./contracts/eosio.system)
-   * [eosio.msig](./contracts/eosio.msig)
-   * [eosio.wrap](./contracts/eosio.wrap)
+   * [rem.bios](./contracts/rem.bios)
+   * [rem.system](./contracts/rem.system)
+   * [rem.msig](./contracts/rem.msig)
+   * [rem.wrap](./contracts/rem.wrap)
 
 The following unprivileged contract(s) are also part of the system.
-   * [eosio.token](./contracts/eosio.token)
+
+   * [rem.attr](./contracts/rem.attr)
+   * [rem.auth](./contracts/rem.auth)
+   * [rem.oracle](./contracts/rem.oracle)
+   * [rem.swap](./contracts/rem.swap)
+   * [rem.token](./contracts/rem.token)
 
 Dependencies:
 * [eosio.cdt v1.7.x](https://github.com/EOSIO/eosio.cdt/releases/tag/v1.7.0)
-* [eosio v2.0.x](https://github.com/EOSIO/eos/releases/tag/v2.0.1) (optional dependency only needed to build unit tests)
+* [remprotocol v0.4.x](https://github.com/Remmeauth/remprotocol/releases/tag/v0.4.2) (optional dependency only needed to build unit tests)
 
 To build the contracts follow the instructions in [`Build and deploy` section](./docs/02_build-and-deploy.md).
 
