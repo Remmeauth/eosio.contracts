@@ -1,26 +1,51 @@
 #pragma once
 #include <eosio/testing/tester.hpp>
 
+#define CORE_SYM_NAME "SYS"
+#define CORE_SYM_PRECISION 4
+
+#define _STRINGIZE1(x) #x
+#define _STRINGIZE2(x) _STRINGIZE1(x)
+
+#define CORE_SYM_STR ( _STRINGIZE2(CORE_SYM_PRECISION) "," CORE_SYM_NAME )
+#define CORE_SYM  ( ::eosio::chain::string_to_symbol_c( CORE_SYM_PRECISION, CORE_SYM_NAME ) )
+
+struct core_sym {
+   static inline eosio::chain::asset from_string(const std::string& s) {
+      return eosio::chain::asset::from_string(s + " " CORE_SYM_NAME);
+   }
+};
+
 namespace eosio { namespace testing {
 
 struct contracts {
-   static std::vector<uint8_t> system_wasm() { return read_wasm("${CMAKE_BINARY_DIR}/../contracts/eosio.system/eosio.system.wasm"); }
-   static std::vector<char>    system_abi() { return read_abi("${CMAKE_BINARY_DIR}/../contracts/eosio.system/eosio.system.abi"); }
-   static std::vector<uint8_t> token_wasm() { return read_wasm("${CMAKE_BINARY_DIR}/../contracts/eosio.token/eosio.token.wasm"); }
-   static std::vector<char>    token_abi() { return read_abi("${CMAKE_BINARY_DIR}/../contracts/eosio.token/eosio.token.abi"); }
-   static std::vector<uint8_t> msig_wasm() { return read_wasm("${CMAKE_BINARY_DIR}/../contracts/eosio.msig/eosio.msig.wasm"); }
-   static std::vector<char>    msig_abi() { return read_abi("${CMAKE_BINARY_DIR}/../contracts/eosio.msig/eosio.msig.abi"); }
-   static std::vector<uint8_t> wrap_wasm() { return read_wasm("${CMAKE_BINARY_DIR}/../contracts/eosio.wrap/eosio.wrap.wasm"); }
-   static std::vector<char>    wrap_abi() { return read_abi("${CMAKE_BINARY_DIR}/../contracts/eosio.wrap/eosio.wrap.abi"); }
-   static std::vector<uint8_t> bios_wasm() { return read_wasm("${CMAKE_BINARY_DIR}/../contracts/eosio.bios/eosio.bios.wasm"); }
-   static std::vector<char>    bios_abi() { return read_abi("${CMAKE_BINARY_DIR}/../contracts/eosio.bios/eosio.bios.abi"); }
+   static std::vector<uint8_t> rem_system_wasm() { return read_wasm("${CMAKE_BINARY_DIR}/../contracts/rem.system/rem.system.wasm"); }
+   static std::vector<char>    rem_system_abi() { return read_abi("${CMAKE_BINARY_DIR}/../contracts/rem.system/rem.system.abi"); }
+   static std::vector<uint8_t> rem_swap_wasm() { return read_wasm("${CMAKE_BINARY_DIR}/../contracts/rem.swap/rem.swap.wasm"); }
+   static std::vector<char>    rem_swap_abi() { return read_abi("${CMAKE_BINARY_DIR}/../contracts/rem.swap/rem.swap.abi"); }
+   static std::vector<uint8_t> rem_auth_wasm() { return read_wasm("${CMAKE_BINARY_DIR}/../contracts/rem.auth/rem.auth.wasm"); }
+   static std::vector<char>    rem_auth_abi() { return read_abi("${CMAKE_BINARY_DIR}/../contracts/rem.auth/rem.auth.abi"); }
+   static std::vector<uint8_t> rem_attr_wasm() { return read_wasm("${CMAKE_BINARY_DIR}/../contracts/rem.attr/rem.attr.wasm"); }
+   static std::vector<char>    rem_attr_abi() { return read_abi("${CMAKE_BINARY_DIR}/../contracts/rem.attr/rem.attr.abi"); }
+   static std::vector<uint8_t> rem_oracle_wasm() { return read_wasm("${CMAKE_BINARY_DIR}/../contracts/rem.oracle/rem.oracle.wasm"); }
+   static std::vector<char>    rem_oracle_abi() { return read_abi("${CMAKE_BINARY_DIR}/../contracts/rem.oracle/rem.oracle.abi"); }
+   static std::vector<uint8_t> rem_utils_wasm() { return read_wasm("${CMAKE_BINARY_DIR}/../contracts/rem.utils/rem.utils.wasm"); }
+   static std::vector<char>    rem_utils_abi() { return read_abi("${CMAKE_BINARY_DIR}/../contracts/rem.utils/rem.utils.abi"); }
+   static std::vector<uint8_t> rem_token_wasm() { return read_wasm("${CMAKE_BINARY_DIR}/../contracts/rem.token/rem.token.wasm"); }
+   static std::vector<char>    rem_token_abi() { return read_abi("${CMAKE_BINARY_DIR}/../contracts/rem.token/rem.token.abi"); }
+   static std::vector<uint8_t> rem_msig_wasm() { return read_wasm("${CMAKE_BINARY_DIR}/../contracts/rem.msig/rem.msig.wasm"); }
+   static std::vector<char>    rem_msig_abi() { return read_abi("${CMAKE_BINARY_DIR}/../contracts/rem.msig/rem.msig.abi"); }
+   static std::vector<uint8_t> wrap_wasm() { return read_wasm("${CMAKE_BINARY_DIR}/../contracts/rem.wrap/rem.wrap.wasm"); }
+   static std::vector<char>    wrap_abi() { return read_abi("${CMAKE_BINARY_DIR}/../contracts/rem.wrap/rem.wrap.abi"); }
+   static std::vector<uint8_t> bios_wasm() { return read_wasm("${CMAKE_BINARY_DIR}/../contracts/rem.bios/rem.bios.wasm"); }
+   static std::vector<char>    bios_abi() { return read_abi("${CMAKE_BINARY_DIR}/../contracts/rem.bios/rem.bios.abi"); }
 
    struct util {
       static std::vector<uint8_t> reject_all_wasm() { return read_wasm("${CMAKE_SOURCE_DIR}/test_contracts/reject_all.wasm"); }
       static std::vector<uint8_t> exchange_wasm() { return read_wasm("${CMAKE_SOURCE_DIR}/test_contracts/exchange.wasm"); }
-      static std::vector<uint8_t> system_wasm_v1_8() { return read_wasm("${CMAKE_SOURCE_DIR}/test_contracts/old_versions/v1.8.3/eosio.system/eosio.system.wasm"); }
-      static std::vector<char>    system_abi_v1_8() { return read_abi("${CMAKE_SOURCE_DIR}/test_contracts/old_versions/v1.8.3/eosio.system/eosio.system.abi"); }
-      static std::vector<uint8_t> system_wasm_old() { return read_wasm("${CMAKE_SOURCE_DIR}/test_contracts/old_versions/v1.2.1/eosio.system/eosio.system.wasm"); }
+      static std::vector<uint8_t> system_wasm_v1_8() { return read_wasm("${CMAKE_SOURCE_DIR}/test_contracts/old_versions/v1.8.3/rem.system/rem.system.wasm"); }
+      static std::vector<char>    system_abi_v1_8() { return read_abi("${CMAKE_SOURCE_DIR}/test_contracts/old_versions/v1.8.3/rem.system/rem.system.abi"); }
+      static std::vector<uint8_t> system_wasm_old() { return read_wasm("${CMAKE_SOURCE_DIR}/test_contracts/old_versions/v1.2.1/rem.system/rem.system.wasm"); }
       static std::vector<char>    system_abi_old() { return read_abi("${CMAKE_SOURCE_DIR}/test_contracts/old_versions/v1.2.1/eosio.system/eosio.system.abi"); }
       static std::vector<uint8_t> msig_wasm_old() { return read_wasm("${CMAKE_SOURCE_DIR}/test_contracts/old_versions/v1.2.1/eosio.msig/eosio.msig.wasm"); }
       static std::vector<char>    msig_abi_old() { return read_abi("${CMAKE_SOURCE_DIR}/test_contracts/old_versions/v1.2.1/eosio.msig/eosio.msig.abi"); }
