@@ -544,10 +544,10 @@ BOOST_FIXTURE_TEST_CASE( addkeyacc_pay_by_rem_test, rem_auth_tester ) {
 
       auto ct = control->head_block_time();
       BOOST_REQUIRE_EQUAL(data["owner"].as_string(), account.to_string());
-      BOOST_REQUIRE_EQUAL(data["public_key"].as_string(), key_pub.to_string());
+      BOOST_REQUIRE_EQUAL(data["pub_key"].as_string(), key_pub.to_string());
       BOOST_REQUIRE_EQUAL(data["not_valid_before"].as_string(), string(ct));
       BOOST_REQUIRE_EQUAL(data["not_valid_after"].as_string(), string(ct + days(360)));
-      BOOST_REQUIRE_EQUAL(data["extra_public_key"].as_string(), extra_pub_key);
+      BOOST_REQUIRE_EQUAL(data["extra_pub_key"].as_string(), extra_pub_key);
       BOOST_REQUIRE_EQUAL(data["revoked_at"].as_string(), "0"); // if not revoked == 0
       BOOST_REQUIRE_EQUAL(account_balance_before - storage_fee, account_balance_after);
       BOOST_REQUIRE_EQUAL(auth_contract_balance_before, auth_contract_balance_after);
@@ -622,10 +622,10 @@ BOOST_FIXTURE_TEST_CASE( addkeyacc_pay_by_rem_with_discount_test, rem_auth_teste
 
       auto ct = control->head_block_time();
       BOOST_REQUIRE_EQUAL(data["owner"].as_string(), account.to_string());
-      BOOST_REQUIRE_EQUAL(data["public_key"].as_string(), key_pub.to_string());
+      BOOST_REQUIRE_EQUAL(data["pub_key"].as_string(), key_pub.to_string());
       BOOST_REQUIRE_EQUAL(data["not_valid_before"].as_string(), string(ct));
       BOOST_REQUIRE_EQUAL(data["not_valid_after"].as_string(), string(ct + days(360)));
-      BOOST_REQUIRE_EQUAL(data["extra_public_key"].as_string(), extra_pub_key);
+      BOOST_REQUIRE_EQUAL(data["extra_pub_key"].as_string(), extra_pub_key);
       BOOST_REQUIRE_EQUAL(data["revoked_at"].as_string(), "0"); // if not revoked == 0
       BOOST_REQUIRE_EQUAL(account_balance_before.get_amount() - storage_fee.get_amount() * discount, account_balance_after.get_amount());
       BOOST_REQUIRE_EQUAL(auth_contract_balance_before, auth_contract_balance_after);
@@ -695,10 +695,10 @@ BOOST_FIXTURE_TEST_CASE( addkeyacc_pay_by_rem_with_another_payer_test, rem_auth_
 
       auto ct = control->head_block_time();
       BOOST_REQUIRE_EQUAL(data["owner"].as_string(), account.to_string());
-      BOOST_REQUIRE_EQUAL(data["public_key"].as_string(), key_pub.to_string());
+      BOOST_REQUIRE_EQUAL(data["pub_key"].as_string(), key_pub.to_string());
       BOOST_REQUIRE_EQUAL(data["not_valid_before"].as_string(), string(ct));
       BOOST_REQUIRE_EQUAL(data["not_valid_after"].as_string(), string(ct + days(360)));
-      BOOST_REQUIRE_EQUAL(data["extra_public_key"].as_string(), extra_pub_key);
+      BOOST_REQUIRE_EQUAL(data["extra_pub_key"].as_string(), extra_pub_key);
       BOOST_REQUIRE_EQUAL(data["revoked_at"].as_string(), "0"); // if not revoked == 0
       BOOST_REQUIRE_EQUAL(payer_balance_before - storage_fee, payer_balance_after);
       BOOST_REQUIRE_EQUAL(auth_contract_balance_before, auth_contract_balance_after);
@@ -771,10 +771,10 @@ BOOST_FIXTURE_TEST_CASE( addkeyacc_pay_by_rem_with_another_payer_use_discount_te
 
       auto ct = control->head_block_time();
       BOOST_REQUIRE_EQUAL(data["owner"].as_string(), account.to_string());
-      BOOST_REQUIRE_EQUAL(data["public_key"].as_string(), key_pub.to_string());
+      BOOST_REQUIRE_EQUAL(data["pub_key"].as_string(), key_pub.to_string());
       BOOST_REQUIRE_EQUAL(data["not_valid_before"].as_string(), string(ct));
       BOOST_REQUIRE_EQUAL(data["not_valid_after"].as_string(), string(ct + days(360)));
-      BOOST_REQUIRE_EQUAL(data["extra_public_key"].as_string(), extra_pub_key);
+      BOOST_REQUIRE_EQUAL(data["extra_pub_key"].as_string(), extra_pub_key);
       BOOST_REQUIRE_EQUAL(data["revoked_at"].as_string(), "0"); // if not revoked == 0
       BOOST_REQUIRE_EQUAL(payer_balance_before.get_amount() - storage_fee.get_amount() * discount, payer_balance_after.get_amount());
       BOOST_REQUIRE_EQUAL(auth_stats["supply"].as_string(), "0.0000 AUTH");
@@ -849,10 +849,10 @@ BOOST_FIXTURE_TEST_CASE( addkeyacc_pay_by_auth_test, rem_auth_tester ) {
 
       auto ct = control->head_block_time();
       BOOST_REQUIRE_EQUAL(data["owner"].as_string(), account.to_string());
-      BOOST_REQUIRE_EQUAL(data["public_key"].as_string(), key_pub.to_string());
+      BOOST_REQUIRE_EQUAL(data["pub_key"].as_string(), key_pub.to_string());
       BOOST_REQUIRE_EQUAL(data["not_valid_before"].as_string(), string(ct));
       BOOST_REQUIRE_EQUAL(data["not_valid_after"].as_string(), string(ct + days(360)));
-      BOOST_REQUIRE_EQUAL(data["extra_public_key"].as_string(), extra_pub_key);
+      BOOST_REQUIRE_EQUAL(data["extra_pub_key"].as_string(), extra_pub_key);
       BOOST_REQUIRE_EQUAL(data["revoked_at"].as_string(), "0"); // if not revoked == 0
       BOOST_REQUIRE_EQUAL(account_balance_before - storage_fee, account_balance_after);
       BOOST_REQUIRE_EQUAL(account_auth_balance_before.get_amount() - 1'0000, account_auth_balance_after.get_amount());
@@ -952,10 +952,10 @@ BOOST_FIXTURE_TEST_CASE( addkeyacc_pay_by_auth_with_another_payer_test, rem_auth
 
       auto ct = control->head_block_time();
       BOOST_REQUIRE_EQUAL(data["owner"].as_string(), account.to_string());
-      BOOST_REQUIRE_EQUAL(data["public_key"].as_string(), key_pub.to_string());
+      BOOST_REQUIRE_EQUAL(data["pub_key"].as_string(), key_pub.to_string());
       BOOST_REQUIRE_EQUAL(data["not_valid_before"].as_string(), string(ct));
       BOOST_REQUIRE_EQUAL(data["not_valid_after"].as_string(), string(ct + days(360)));
-      BOOST_REQUIRE_EQUAL(data["extra_public_key"].as_string(), extra_pub_key);
+      BOOST_REQUIRE_EQUAL(data["extra_pub_key"].as_string(), extra_pub_key);
       BOOST_REQUIRE_EQUAL(data["revoked_at"].as_string(), "0"); // if not revoked == 0
       BOOST_REQUIRE_EQUAL(payer_balance_before - storage_fee, payer_balance_after);
       BOOST_REQUIRE_EQUAL(payer_balance_auth.get_amount(), 0);
@@ -1032,10 +1032,10 @@ BOOST_FIXTURE_TEST_CASE( addkeyapp_pay_by_rem_test, rem_auth_tester ) {
 
       auto ct = control->head_block_time();
       BOOST_REQUIRE_EQUAL(data["owner"].as_string(), account.to_string());
-      BOOST_REQUIRE_EQUAL(data["public_key"].as_string(), new_key_pub.to_string());
+      BOOST_REQUIRE_EQUAL(data["pub_key"].as_string(), new_key_pub.to_string());
       BOOST_REQUIRE_EQUAL(data["not_valid_before"].as_string(), string(ct));
       BOOST_REQUIRE_EQUAL(data["not_valid_after"].as_string(), string(ct + days(360)));
-      BOOST_REQUIRE_EQUAL(data["extra_public_key"].as_string(), extra_pub_key);
+      BOOST_REQUIRE_EQUAL(data["extra_pub_key"].as_string(), extra_pub_key);
       BOOST_REQUIRE_EQUAL(data["revoked_at"].as_string(), "0"); // if not revoked == 0
       BOOST_REQUIRE_EQUAL(account_balance_before - (storage_fee + storage_fee), account_balance_after);
       BOOST_REQUIRE_EQUAL(auth_stats["supply"].as_string(), "0.0000 AUTH");
@@ -1125,10 +1125,10 @@ BOOST_FIXTURE_TEST_CASE( addkeyapp_pay_by_rem_with_another_payer_test, rem_auth_
 
       auto ct = control->head_block_time();
       BOOST_REQUIRE_EQUAL(data["owner"].as_string(), account.to_string());
-      BOOST_REQUIRE_EQUAL(data["public_key"].as_string(), new_key_pub.to_string());
+      BOOST_REQUIRE_EQUAL(data["pub_key"].as_string(), new_key_pub.to_string());
       BOOST_REQUIRE_EQUAL(data["not_valid_before"].as_string(), string(ct));
       BOOST_REQUIRE_EQUAL(data["not_valid_after"].as_string(), string(ct + days(360)));
-      BOOST_REQUIRE_EQUAL(data["extra_public_key"].as_string(), extra_pub_key);
+      BOOST_REQUIRE_EQUAL(data["extra_pub_key"].as_string(), extra_pub_key);
       BOOST_REQUIRE_EQUAL(data["revoked_at"].as_string(), "0"); // if not revoked == 0
       BOOST_REQUIRE_EQUAL(payer_balance_before - (storage_fee + storage_fee), payer_balance_after);
       BOOST_REQUIRE_EQUAL(auth_stats["supply"].as_string(), "0.0000 AUTH");
@@ -1223,10 +1223,10 @@ BOOST_FIXTURE_TEST_CASE( addkeyapp_pay_by_auth_test, rem_auth_tester ) {
 
       auto ct = control->head_block_time();
       BOOST_REQUIRE_EQUAL(data["owner"].as_string(), account.to_string());
-      BOOST_REQUIRE_EQUAL(data["public_key"].as_string(), new_key_pub.to_string());
+      BOOST_REQUIRE_EQUAL(data["pub_key"].as_string(), new_key_pub.to_string());
       BOOST_REQUIRE_EQUAL(data["not_valid_before"].as_string(), string(ct));
       BOOST_REQUIRE_EQUAL(data["not_valid_after"].as_string(), string(ct + days(360)));
-      BOOST_REQUIRE_EQUAL(data["extra_public_key"].as_string(), extra_pub_key);
+      BOOST_REQUIRE_EQUAL(data["extra_pub_key"].as_string(), extra_pub_key);
       BOOST_REQUIRE_EQUAL(data["revoked_at"].as_string(), "0"); // if not revoked == 0
       BOOST_REQUIRE_EQUAL(account_balance_before - storage_fee, account_balance_after);
       BOOST_REQUIRE_EQUAL(account_auth_balance_before.get_amount() - 2 * 1'0000, account_auth_balance_after.get_amount());
@@ -1324,10 +1324,10 @@ BOOST_FIXTURE_TEST_CASE( addkeyapp_pay_by_auth_with_another_payer_test, rem_auth
 
       auto ct = control->head_block_time();
       BOOST_REQUIRE_EQUAL(data["owner"].as_string(), account.to_string());
-      BOOST_REQUIRE_EQUAL(data["public_key"].as_string(), new_key_pub.to_string());
+      BOOST_REQUIRE_EQUAL(data["pub_key"].as_string(), new_key_pub.to_string());
       BOOST_REQUIRE_EQUAL(data["not_valid_before"].as_string(), string(ct));
       BOOST_REQUIRE_EQUAL(data["not_valid_after"].as_string(), string(ct + days(360)));
-      BOOST_REQUIRE_EQUAL(data["extra_public_key"].as_string(), extra_pub_key);
+      BOOST_REQUIRE_EQUAL(data["extra_pub_key"].as_string(), extra_pub_key);
       BOOST_REQUIRE_EQUAL(data["revoked_at"].as_string(), "0"); // if not revoked == 0
       BOOST_REQUIRE_EQUAL(payer_balance_before - storage_fee, payer_balance_after);
       BOOST_REQUIRE_EQUAL(payer_auth_balance_before.get_amount() - 2 * 1'0000, payer_auth_balance_after.get_amount());
@@ -1475,10 +1475,10 @@ BOOST_FIXTURE_TEST_CASE( revokedacc_test, rem_auth_tester ) {
       auto data = get_authkeys_tbl();
 
       BOOST_REQUIRE_EQUAL(data["owner"].as_string(), account.to_string());
-      BOOST_REQUIRE_EQUAL(data["public_key"].as_string(), key_pub.to_string());
+      BOOST_REQUIRE_EQUAL(data["pub_key"].as_string(), key_pub.to_string());
       BOOST_REQUIRE_EQUAL(data["not_valid_before"].as_string(), string(ct));
       BOOST_REQUIRE_EQUAL(data["not_valid_after"].as_string(), string(ct + days(360)));
-      BOOST_REQUIRE_EQUAL(data["extra_public_key"].as_string(), extra_pub_key);
+      BOOST_REQUIRE_EQUAL(data["extra_pub_key"].as_string(), extra_pub_key);
       BOOST_REQUIRE_EQUAL(data["revoked_at"].as_string(), std::to_string(revoked_at) ); // if not revoked == 0
 
       // Missing required authority account
@@ -1534,10 +1534,10 @@ BOOST_FIXTURE_TEST_CASE( revokedapp_test, rem_auth_tester ) {
       auto data = get_authkeys_tbl();
 
       BOOST_REQUIRE_EQUAL(data["owner"].as_string(), account.to_string());
-      BOOST_REQUIRE_EQUAL(data["public_key"].as_string(), revoke_key_pub.to_string());
+      BOOST_REQUIRE_EQUAL(data["pub_key"].as_string(), revoke_key_pub.to_string());
       BOOST_REQUIRE_EQUAL(data["not_valid_before"].as_string(), string(ct));
       BOOST_REQUIRE_EQUAL(data["not_valid_after"].as_string(), string(ct + days(360)));
-      BOOST_REQUIRE_EQUAL(data["extra_public_key"].as_string(), extra_pub_key);
+      BOOST_REQUIRE_EQUAL(data["extra_pub_key"].as_string(), extra_pub_key);
       BOOST_REQUIRE_EQUAL(data["revoked_at"].as_string(), std::to_string(revoked_at) ); // if not revoked == 0
 
       // add new key to test revokeapp throw
@@ -1611,10 +1611,10 @@ BOOST_FIXTURE_TEST_CASE( revokedapp_and_sign_by_another_key_test, rem_auth_teste
       auto data = get_authkeys_tbl();
 
       BOOST_REQUIRE_EQUAL(data["owner"].as_string(), account.to_string());
-      BOOST_REQUIRE_EQUAL(data["public_key"].as_string(), revoke_key_pub.to_string());
+      BOOST_REQUIRE_EQUAL(data["pub_key"].as_string(), revoke_key_pub.to_string());
       BOOST_REQUIRE_EQUAL(data["not_valid_before"].as_string(), string(ct));
       BOOST_REQUIRE_EQUAL(data["not_valid_after"].as_string(), string(ct + days(360)));
-      BOOST_REQUIRE_EQUAL(data["extra_public_key"].as_string(), extra_pub_key);
+      BOOST_REQUIRE_EQUAL(data["extra_pub_key"].as_string(), extra_pub_key);
       BOOST_REQUIRE_EQUAL(data["revoked_at"].as_string(), std::to_string(revoked_at) ); // if not revoked == 0
    } FC_LOG_AND_RETHROW()
 }
