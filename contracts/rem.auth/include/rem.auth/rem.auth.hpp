@@ -135,12 +135,11 @@ namespace eosio {
       using buyauth_action   = action_wrapper<"buyauth"_n,     &auth::buyauth>;
       using transfer_action  = action_wrapper<"transfer"_n,   &auth::transfer>;
    private:
-      static constexpr symbol auth_symbol{"AUTH", 4};
       static constexpr name system_account = "rem"_n;
 
-      const asset key_storage_fee{1'0000, auth_symbol};
       const time_point key_lifetime = time_point(days(360));
       const time_point key_cleanup_time = time_point(days(180)); // the time that should be passed after not_valid_after to delete key
+      static constexpr int64_t key_storage_fee = 1'0000;
 
       struct [[eosio::table]] authkeys {
          uint64_t          key;

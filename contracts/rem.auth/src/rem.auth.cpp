@@ -148,10 +148,10 @@ namespace eosio {
       check(quantity.is_valid(), "invalid quantity");
       check(quantity.amount > 0, "quantity should be a positive value");
       check(max_price > 0, "maximum price should be a positive value");
-      check(quantity.symbol == auth_symbol, "symbol precision mismatch");
+      check(quantity.symbol == system_contract::auth_symbol, "symbol precision mismatch");
 
       remoracle::remprice_idx remprice_table(system_contract::oracle_account, system_contract::oracle_account.value);
-      auto remusd_it = remprice_table.find("rem.usd"_n.value);
+      auto remusd_it = remprice_table.find(system_contract::rem_usd_pair.value);
       check(remusd_it != remprice_table.end(), "pair does not exist");
 
       double remusd_price = remusd_it->price;
@@ -186,45 +186,48 @@ namespace eosio {
 
    void auth::sub_storage_fee(const name &account, const asset &price_limit)
    {
-      bool is_pay_by_auth = (price_limit.symbol == auth_symbol);
+      bool is_pay_by_auth = (price_limit.symbol == system_contract::auth_symbol);
       bool is_pay_by_rem  = (price_limit.symbol == system_contract::get_core_symbol());
 
       check(is_pay_by_rem || is_pay_by_auth, "unavailable payment method");
       check(price_limit.is_valid(), "invalid price limit");
       check(price_limit.amount > 0, "price limit should be a positive value");
 
-      asset auth_credit_supply = token::get_supply(system_contract::token_account, auth_symbol.code());
+      asset auth_credit_supply = token::get_supply(system_contract::token_account, system_contract::auth_symbol.code());
+      asset key_storage_fee_in_auth = asset(key_storage_fee, system_contract::auth_symbol);
       asset rem_balance = get_balance(system_contract::token_account, get_self(), system_contract::get_core_symbol());
 
       if (is_pay_by_rem) {
          double account_discount = get_account_discount(account);
-         asset purchase_fee = get_purchase_fee(key_storage_fee);
+         asset purchase_fee = get_purchase_fee(key_storage_fee_in_auth);
          purchase_fee.amount *= account_discount;
          check(purchase_fee < price_limit, "currently REM/USD price is above price limit");
 
          transfer_tokens(account, get_self(), purchase_fee, "AUTH credits purchase fee");
 
-         auth_credit_supply += key_storage_fee;
+         auth_credit_supply += key_storage_fee_in_auth;
          rem_balance += purchase_fee;
       } else {
          check(auth_credit_supply.amount > 0, "overdrawn balance");
-         transfer_tokens(account, get_self(), key_storage_fee, "AUTH credits purchase fee");
+         transfer_tokens(account, get_self(), key_storage_fee_in_auth, "AUTH credits purchase fee");
 
          token::retire_action retire(system_contract::token_account, { get_self(), system_contract::active_permission });
-         retire.send(key_storage_fee, "the use of AUTH credit to store a key");
+         retire.send(key_storage_fee_in_auth, "the use of AUTH credit to store a key");
       }
 
       double reward_amount = rem_balance.amount / double(auth_credit_supply.amount);
 
       system_contract::torewards_action torewards(system_account, { get_self(), system_contract::active_permission });
-      torewards.send(get_self(), asset{static_cast<int64_t>(reward_amount * key_storage_fee.amount), system_contract::get_core_symbol()});
+      torewards.send(get_self(), asset{static_cast<int64_t>(reward_amount * key_storage_fee_in_auth.amount), system_contract::get_core_symbol()});
    }
 
    double auth::get_account_discount(const name &account) const
    {
+      const double default_account_discount = 1;
+
       attribute_info_table attributes_info(get_self(), get_self().value);
       if (attributes_info.begin() == attributes_info.end()) {
-         return 1;
+         return default_account_discount;
       }
 
       vector<char> data;
@@ -244,7 +247,7 @@ namespace eosio {
 
          return account_discount;
       }
-      return 1;
+      return default_account_discount;
    }
 
    void auth::require_app_auth(const name &account, const public_key &pub_key)
@@ -262,20 +265,24 @@ namespace eosio {
    {
       accounts accountstable(token_contract_account, owner.value);
       const auto it = accountstable.find(sym.code().raw());
-      return it == accountstable.end() ? asset{0, sym} : it->balance;
+
+      asset account_balance = (it == accountstable.end()) ? asset{0, sym} : it->balance;
+      return account_balance;
    }
 
    asset auth::get_purchase_fee(const asset &quantity_auth)
    {
       remoracle::remprice_idx remprice_table(system_contract::oracle_account, system_contract::oracle_account.value);
-      auto remusd_it = remprice_table.find("rem.usd"_n.value);
+      auto remusd_it = remprice_table.find(system_contract::rem_usd_pair.value);
       check(remusd_it != remprice_table.end(), "pair does not exist");
 
       double remusd_price = remusd_it->price;
-      int64_t purchase_fee = 1 / remusd_price;
+      int64_t price_per_auth = 1 / remusd_price;
 
-      check(purchase_fee > 0, "invalid REM/USD price");
-      return asset{ quantity_auth.amount * purchase_fee, system_contract::get_core_symbol() };
+      check(price_per_auth > 0, "invalid REM/USD price");
+
+      asset purchase_fee =  asset( quantity_auth.amount * price_per_auth, system_contract::get_core_symbol() );
+      return purchase_fee;
    }
 
    void auth::transfer_tokens(const name &from, const name &to, const asset &quantity, const string &memo)
