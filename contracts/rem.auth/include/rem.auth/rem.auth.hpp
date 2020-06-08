@@ -41,12 +41,11 @@ namespace eosio {
        * @param pub_key_str - the public key that signed the payload,
        * @param signed_by_pub_key - the signature that was signed by pub_key_str,
        * @param price_limit - the maximum price which will be charged for storing the key can be in REM and AUTH,
-       * @param extra_pub_key - the public key for authorization in external services,
        * @param payer_str - the account from which resources are debited.
        */
       [[eosio::action]]
       void addkeyacc(const name &account, const string &pub_key_str, const signature &signed_by_pub_key,
-                     const string &extra_pub_key, const asset &price_limit, const string &payer_str);
+                     const asset &price_limit, const string &payer_str);
 
       /**
        * Add new authentication key action.
@@ -56,7 +55,6 @@ namespace eosio {
        * @param account - the owner account to execute the addkeyapp action for,
        * @param new_pub_key_str - the public key that will be added,
        * @param signed_by_new_pub_key - the signature that was signed by new_pub_key_str,
-       * @param extra_pub_key - the public key for authorization in external services,
        * @param pub_key_str - the public key which is tied to the corresponding account,
        * @param sign_by_key - the signature that was signed by pub_key_str,
        * @param price_limit - the maximum price which will be charged for storing the key can be in REM and AUTH,
@@ -64,8 +62,8 @@ namespace eosio {
        */
       [[eosio::action]]
       void addkeyapp(const name &account, const string &new_pub_key_str, const signature &signed_by_new_pub_key,
-                     const string &extra_pub_key, const string &pub_key_str, const signature &signed_by_pub_key,
-                     const asset &price_limit, const string &payer_str);
+                     const string &pub_key_str, const signature &signed_by_pub_key, const asset &price_limit,
+                     const string &payer_str);
 
       /**
        * Revoke active authentication key action.
@@ -148,7 +146,6 @@ namespace eosio {
          uint64_t          key;
          name              owner;
          public_key        pub_key;
-         string            extra_pub_key;
          block_timestamp   not_valid_before;
          block_timestamp   not_valid_after;
          uint32_t          revoked_at;
@@ -173,7 +170,7 @@ namespace eosio {
       uint64_t by_not_valid_after()const   { return not_valid_after.to_time_point().elapsed.count(); }
       uint64_t by_revoked()const           { return revoked_at;  }
 
-      EOSLIB_SERIALIZE( authkeys, (key)(owner)(pub_key)(extra_pub_key)(not_valid_before)(not_valid_after)(revoked_at))
+      EOSLIB_SERIALIZE( authkeys, (key)(owner)(pub_key)(not_valid_before)(not_valid_after)(revoked_at))
       };
       typedef multi_index<"authkeys"_n, authkeys,
             indexed_by<"bypubkey"_n,     const_mem_fun <authkeys, fixed_bytes<32>, &authkeys::by_public_key>>,

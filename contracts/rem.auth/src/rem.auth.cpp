@@ -12,14 +12,14 @@ namespace eosio {
    using eosiosystem::system_contract;
 
    void auth::addkeyacc(const name &account, const string &pub_key_str, const signature &signed_by_pub_key,
-                        const string &extra_pub_key, const asset &price_limit, const string &payer_str)
+                        const asset &price_limit, const string &payer_str)
    {
       name payer = payer_str.empty() ? account : name(payer_str);
       require_auth(account);
       require_auth(payer);
 
       public_key pub_key = string_to_public_key(pub_key_str);
-      string payload = join( { account.to_string(), pub_key_str, extra_pub_key, payer_str } );
+      string payload = join( { account.to_string(), pub_key_str, payer_str } );
       checksum256 digest = sha256(payload.c_str(), payload.size());
       assert_recover_key(digest, signed_by_pub_key, pub_key);
 
@@ -27,7 +27,6 @@ namespace eosio {
          k.key              = authkeys_tbl.available_primary_key();
          k.owner            = account;
          k.pub_key          = pub_key;
-         k.extra_pub_key    = extra_pub_key;
          k.not_valid_before = current_time_point();
          k.not_valid_after  = current_time_point() + key_lifetime;
          k.revoked_at       = 0; // if not revoked == 0
@@ -38,14 +37,14 @@ namespace eosio {
    }
 
    void auth::addkeyapp(const name &account, const string &new_pub_key_str, const signature &signed_by_new_pub_key,
-                        const string &extra_pub_key, const string &pub_key_str, const signature &signed_by_pub_key,
-                        const asset &price_limit, const string &payer_str)
+                        const string &pub_key_str, const signature &signed_by_pub_key, const asset &price_limit,
+                        const string &payer_str)
    {
       bool is_payer = payer_str.empty();
       name payer = is_payer ? account : name(payer_str);
       if (!is_payer) { require_auth(payer); }
 
-      string payload = join( { account.to_string(), new_pub_key_str, extra_pub_key, pub_key_str, payer_str } );
+      string payload = join( { account.to_string(), new_pub_key_str, pub_key_str, payer_str } );
       checksum256 digest = sha256(payload.c_str(), payload.size());
 
       public_key new_pub_key = string_to_public_key(new_pub_key_str);
@@ -62,7 +61,6 @@ namespace eosio {
          k.key              = authkeys_tbl.available_primary_key();
          k.owner            = account;
          k.pub_key          = new_pub_key;
-         k.extra_pub_key    = extra_pub_key;
          k.not_valid_before = current_time_point();
          k.not_valid_after  = current_time_point() + key_lifetime;
          k.revoked_at       = 0; // if not revoked == 0
