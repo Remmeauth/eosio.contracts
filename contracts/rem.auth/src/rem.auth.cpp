@@ -11,22 +11,24 @@
 namespace eosio {
    using eosiosystem::system_contract;
 
-   void auth::addkeyacc(const name &account, const string &pub_key_str, const signature &signed_by_pub_key,
+   void auth::addkeyacc(const name &account, const public_key &pub_key, const signature &signed_by_pub_key,
                         const asset &price_limit, const string &payer_str)
    {
       name payer = payer_str.empty() ? account : name(payer_str);
       require_auth(account);
       require_auth(payer);
 
-      public_key pub_key = string_to_public_key(pub_key_str);
-      string payload = join( { account.to_string(), pub_key_str, payer_str } );
+      public_key_t pub_key_data = public_key_t(pub_key);
+      string pub_key_data_str(std::begin(pub_key_data.data), std::end(pub_key_data.data));
+
+      string payload = join( { account.to_string(), pub_key_data_str, payer_str } );
       checksum256 digest = sha256(payload.c_str(), payload.size());
       assert_recover_key(digest, signed_by_pub_key, pub_key);
 
       authkeys_tbl.emplace(get_self(), [&](auto &k) {
          k.key                = authkeys_tbl.available_primary_key();
          k.owner              = account;
-         k.pub_key            = public_key_t(pub_key);
+         k.pub_key            = pub_key_data;
          k.not_valid_before   = current_time_point();
          k.not_valid_after    = current_time_point() + key_lifetime;
          k.revoked_at         = 0; // if not revoked == 0
@@ -36,31 +38,33 @@ namespace eosio {
       cleanupkeys();
    }
 
-   void auth::addkeyapp(const name &account, const string &new_pub_key_str, const signature &signed_by_new_pub_key,
-                        const string &pub_key_str, const signature &signed_by_pub_key, const asset &price_limit,
+   void auth::addkeyapp(const name &account, const public_key &new_pub_key, const signature &signed_by_new_pub_key,
+                        const public_key &pub_key, const signature &signed_by_pub_key, const asset &price_limit,
                         const string &payer_str)
    {
       bool is_payer = payer_str.empty();
       name payer = is_payer ? account : name(payer_str);
       if (!is_payer) { require_auth(payer); }
 
-      string payload = join( { account.to_string(), new_pub_key_str, pub_key_str, payer_str } );
-      checksum256 digest = sha256(payload.c_str(), payload.size());
+      public_key_t pub_key_data = public_key_t(pub_key);
+      string pub_key_data_str(std::begin(pub_key_data.data), std::end(pub_key_data.data));
+      public_key_t new_pub_key_data = public_key_t(new_pub_key);
+      string new_pub_key_data_str(std::begin(new_pub_key_data.data), std::end(new_pub_key_data.data));
 
-      public_key new_pub_key = string_to_public_key(new_pub_key_str);
-      public_key pub_key = string_to_public_key(pub_key_str);
+      string payload = join( { account.to_string(), new_pub_key_data_str, pub_key_data_str, payer_str } );
+      checksum256 digest = sha256(payload.c_str(), payload.size());
 
       public_key expected_new_pub_key = recover_key(digest, signed_by_new_pub_key);
       public_key expected_pub_key = recover_key(digest, signed_by_pub_key);
 
       check(expected_new_pub_key == new_pub_key, "expected key different than recovered new application key");
       check(expected_pub_key == pub_key, "expected key different than recovered application key");
-      require_app_auth(account, public_key_t(pub_key));
+      require_app_auth(account, pub_key_data);
 
       authkeys_tbl.emplace(get_self(), [&](auto &k) {
          k.key              = authkeys_tbl.available_primary_key();
          k.owner            = account;
-         k.pub_key          = public_key_t(new_pub_key);
+         k.pub_key          = new_pub_key_data;
          k.not_valid_before = current_time_point();
          k.not_valid_after  = current_time_point() + key_lifetime;
          k.revoked_at       = 0; // if not revoked == 0
@@ -91,13 +95,13 @@ namespace eosio {
       return it;
    }
 
-   void auth::revokeacc(const name &account, const string &revoke_pub_key_str)
+   void auth::revokeacc(const name &account, const public_key &revoke_pub_key)
    {
       require_auth(account);
-      public_key revoke_pub_key = string_to_public_key(revoke_pub_key_str);
-      require_app_auth(account, public_key_t(revoke_pub_key));
+      public_key_t revoke_pub_key_data = public_key_t(revoke_pub_key);
+      require_app_auth(account, revoke_pub_key_data);
 
-      auto it = find_active_appkey(account, public_key_t(revoke_pub_key));
+      auto it = find_active_appkey(account, revoke_pub_key_data);
 
       time_point ct = current_time_point();
       authkeys_tbl.modify(*it, get_self(), [&](auto &r) {
@@ -105,21 +109,23 @@ namespace eosio {
       });
    }
 
-   void auth::revokeapp(const name &account, const string &revoke_pub_key_str,
-                        const string &pub_key_str, const signature &signed_by_pub_key)
+   void auth::revokeapp(const name &account, const public_key &revoke_pub_key,
+                        const public_key &pub_key, const signature &signed_by_pub_key)
    {
-      public_key revoke_pub_key = string_to_public_key(revoke_pub_key_str);
-      public_key pub_key = string_to_public_key(pub_key_str);
+      public_key_t revoke_pub_key_data = public_key_t(revoke_pub_key);
+      string revoke_pub_key_data_str(std::begin(revoke_pub_key_data.data), std::end(revoke_pub_key_data.data));
+      public_key_t pub_key_data = public_key_t(pub_key);
+      string pub_key_data_str(std::begin(pub_key_data.data), std::end(pub_key_data.data));
 
-      string payload = join( { account.to_string(), revoke_pub_key_str, pub_key_str } );
+      string payload = join( { account.to_string(), revoke_pub_key_data_str, pub_key_data_str } );
       checksum256 digest = sha256(payload.c_str(), payload.size());
 
       public_key expected_pub_key = recover_key(digest, signed_by_pub_key);
       check(expected_pub_key == pub_key, "expected key different than recovered application key");
-      require_app_auth(account, public_key_t(revoke_pub_key));
-      require_app_auth(account, public_key_t(pub_key));
+      require_app_auth(account, revoke_pub_key_data);
+      require_app_auth(account, pub_key_data);
 
-      auto it = find_active_appkey(account, public_key_t(revoke_pub_key));
+      auto it = find_active_appkey(account, revoke_pub_key_data);
 
       time_point ct = current_time_point();
       authkeys_tbl.modify(*it, get_self(), [&](auto &r) {
@@ -128,16 +134,18 @@ namespace eosio {
    }
 
    void auth::transfer(const name &from, const name &to, const asset &quantity, const string &memo,
-                       const string &pub_key_str, const signature &signed_by_pub_key)
+                       const public_key &pub_key, const signature &signed_by_pub_key)
    {
-      string payload = join( { from.to_string(), to.to_string(), quantity.to_string(), pub_key_str } );
+      public_key_t pub_key_data = public_key_t(pub_key);
+      string pub_key_data_str(std::begin(pub_key_data.data), std::end(pub_key_data.data));
+
+      string payload = join( { from.to_string(), to.to_string(), quantity.to_string(), pub_key_data_str } );
       checksum256 digest = sha256(payload.c_str(), payload.size());
 
-      public_key pub_key = string_to_public_key(pub_key_str);
       public_key expected_pub_key = recover_key(digest, signed_by_pub_key);
 
       check(expected_pub_key == pub_key, "expected key different than recovered application key");
-      require_app_auth(from, public_key_t(pub_key));
+      require_app_auth(from, pub_key_data);
 
       transfer_tokens(from, to, quantity, memo);
    }
