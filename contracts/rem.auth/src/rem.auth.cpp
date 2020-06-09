@@ -24,12 +24,12 @@ namespace eosio {
       assert_recover_key(digest, signed_by_pub_key, pub_key);
 
       authkeys_tbl.emplace(get_self(), [&](auto &k) {
-         k.key              = authkeys_tbl.available_primary_key();
-         k.owner            = account;
-         k.pub_key          = pub_key;
-         k.not_valid_before = current_time_point();
-         k.not_valid_after  = current_time_point() + key_lifetime;
-         k.revoked_at       = 0; // if not revoked == 0
+         k.key                = authkeys_tbl.available_primary_key();
+         k.owner              = account;
+         k.pub_key            = public_key_t(pub_key);
+         k.not_valid_before   = current_time_point();
+         k.not_valid_after    = current_time_point() + key_lifetime;
+         k.revoked_at         = 0; // if not revoked == 0
       });
 
       sub_storage_fee(payer, price_limit);
@@ -55,12 +55,12 @@ namespace eosio {
 
       check(expected_new_pub_key == new_pub_key, "expected key different than recovered new application key");
       check(expected_pub_key == pub_key, "expected key different than recovered application key");
-      require_app_auth(account, pub_key);
+      require_app_auth(account, public_key_t(pub_key));
 
       authkeys_tbl.emplace(get_self(), [&](auto &k) {
          k.key              = authkeys_tbl.available_primary_key();
          k.owner            = account;
-         k.pub_key          = new_pub_key;
+         k.pub_key          = public_key_t(new_pub_key);
          k.not_valid_before = current_time_point();
          k.not_valid_after  = current_time_point() + key_lifetime;
          k.revoked_at       = 0; // if not revoked == 0
@@ -70,7 +70,7 @@ namespace eosio {
       cleanupkeys();
    }
 
-   auto auth::find_active_appkey(const name &account, const public_key &key)
+   auto auth::find_active_appkey(const name &account, const public_key_t &key)
    {
       auto authkeys_idx = authkeys_tbl.get_index<"byname"_n>();
       auto it = authkeys_idx.find(account.value);
@@ -95,9 +95,9 @@ namespace eosio {
    {
       require_auth(account);
       public_key revoke_pub_key = string_to_public_key(revoke_pub_key_str);
-      require_app_auth(account, revoke_pub_key);
+      require_app_auth(account, public_key_t(revoke_pub_key));
 
-      auto it = find_active_appkey(account, revoke_pub_key);
+      auto it = find_active_appkey(account, public_key_t(revoke_pub_key));
 
       time_point ct = current_time_point();
       authkeys_tbl.modify(*it, get_self(), [&](auto &r) {
@@ -116,10 +116,10 @@ namespace eosio {
 
       public_key expected_pub_key = recover_key(digest, signed_by_pub_key);
       check(expected_pub_key == pub_key, "expected key different than recovered application key");
-      require_app_auth(account, revoke_pub_key);
-      require_app_auth(account, pub_key);
+      require_app_auth(account, public_key_t(revoke_pub_key));
+      require_app_auth(account, public_key_t(pub_key));
 
-      auto it = find_active_appkey(account, revoke_pub_key);
+      auto it = find_active_appkey(account, public_key_t(revoke_pub_key));
 
       time_point ct = current_time_point();
       authkeys_tbl.modify(*it, get_self(), [&](auto &r) {
@@ -137,7 +137,7 @@ namespace eosio {
       public_key expected_pub_key = recover_key(digest, signed_by_pub_key);
 
       check(expected_pub_key == pub_key, "expected key different than recovered application key");
-      require_app_auth(from, pub_key);
+      require_app_auth(from, public_key_t(pub_key));
 
       transfer_tokens(from, to, quantity, memo);
    }
@@ -250,7 +250,7 @@ namespace eosio {
       return default_account_discount;
    }
 
-   void auth::require_app_auth(const name &account, const public_key &pub_key)
+   void auth::require_app_auth(const name &account, const public_key_t &pub_key)
    {
       auto authkeys_idx = authkeys_tbl.get_index<"byname"_n>();
       auto it = authkeys_idx.find(account.value);
