@@ -143,57 +143,24 @@ namespace eosio {
 
       enum class pub_key_algorithm : int8_t { ES256K1 = 0, ES256 };
 
-      struct public_key_t {
-         std::vector<char> data;
-         int8_t algorithm;
-
-         public_key_t() = default;
-
-         explicit public_key_t(public_key key)
-         : data(0), algorithm(0)
-         {
-            const int8_t es256k1_algorithm = static_cast<int8_t>(pub_key_algorithm::ES256K1);
-            const int8_t es256_algorithm = static_cast<int8_t>(pub_key_algorithm::ES256);
-            auto key_algorithm = key.index();
-            check(es256k1_algorithm == key_algorithm || es256_algorithm == key_algorithm,
-               "Not supported public key algorithm");
-
-            switch (key.index()){
-               case es256k1_algorithm:
-                  data.insert(data.begin(), std::begin(std::get<0>(key)), std::end(std::get<0>(key)));
-                  algorithm = key.index();
-                  break;
-               case es256_algorithm:
-                  data.insert(data.begin(), std::begin(std::get<1>(key)), std::end(std::get<1>(key)));
-                  algorithm = key.index();
-                  break;
-            }
-         }
-
-         friend bool operator == ( const public_key_t& a, const public_key_t& b ) {
-            return std::tie(a.data, a.algorithm) == std::tie(b.data, b.algorithm);
-         }
-
-         EOSLIB_SERIALIZE( public_key_t, (data)(algorithm) )
-      };
-
       struct [[eosio::table]] authkeys {
          uint64_t             key;
          name                 owner;
-         public_key_t         pub_key;
+         public_key           pub_key;
          block_timestamp      not_valid_before;
          block_timestamp      not_valid_after;
          uint32_t             revoked_at;
 
-      static fixed_bytes<32> get_pub_key_hash(public_key_t key) {
-         auto key_data = key.data.data();
-         checksum256 key_hash = sha256(key_data, key.data.size());
-         const uint128_t *p128 = reinterpret_cast<const uint128_t *>(&key_hash);
+      static fixed_bytes<32> get_pub_key_hash(public_key key) {
+         bool is_k1_type = std::get_if<0>(&key);
+         auto key_data = is_k1_type ? std::get_if<0>(&key)->data() : std::get_if<1>(&key)->data();
+         auto key_size = is_k1_type ? std::get_if<0>(&key)->size() : std::get_if<1>(&key)->size();
 
+         checksum256 key_hash = sha256(key_data, key_size);
+         const uint128_t *p128 = reinterpret_cast<const uint128_t *>(&key_hash);
          fixed_bytes<32> key_hash_bytes;
          key_hash_bytes.data()[0] = p128[0];
          key_hash_bytes.data()[1] = p128[1];
-
          return key_hash_bytes;
       }
 
@@ -227,12 +194,13 @@ namespace eosio {
       void transfer_tokens(const name &from, const name &to, const asset &quantity, const string &memo);
       void to_rewards(const name& payer, const asset &quantity);
 
-      auto find_active_appkey(const name &account, const public_key_t &key);
-      void require_app_auth(const name &account, const public_key_t &key);
+      auto find_active_appkey(const name &account, const public_key &key);
+      void require_app_auth(const name &account, const public_key &key);
 
       asset get_balance(const name& token_contract_account, const name& owner, const symbol& sym);
       asset get_purchase_fee(const asset &quantity_auth);
       double get_account_discount(const name &account) const;
+      vector<char> get_pub_key_data(const public_key &key);
 
       void check_permission(const name& issuer, const name& receiver, int32_t ptype) const;
       bool need_confirm(int32_t ptype) const;
