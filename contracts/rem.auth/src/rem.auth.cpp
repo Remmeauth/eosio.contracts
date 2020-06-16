@@ -294,22 +294,10 @@ namespace eosio {
 
    vector<char> auth::get_pub_key_data(const public_key &key)
    {
-      const int8_t es256k1_algorithm = static_cast<int8_t>(pub_key_algorithm::ES256K1);
-      const int8_t es256_algorithm = static_cast<int8_t>(pub_key_algorithm::ES256);
-      auto key_algorithm = key.index();
-      check(es256k1_algorithm == key_algorithm || es256_algorithm == key_algorithm,
-            "Not supported public key algorithm");
+      vector<char> data_with_algorithm = pack<public_key>(key);
 
-      vector<char> data;
-      switch (key.index()) {
-         case es256k1_algorithm:
-            data.insert(data.begin(), std::begin(std::get<0>(key)), std::end(std::get<0>(key)));
-            break;
-         case es256_algorithm:
-            data.insert(data.begin(), std::begin(std::get<1>(key)), std::end(std::get<1>(key)));
-            break;
-      }
-
+      // skip the first byte which is the public key type (R1 (0x01) or K1 (0x02))
+      vector<char> data(data_with_algorithm.begin() + 1, data_with_algorithm.end());
       return data;
    }
 
