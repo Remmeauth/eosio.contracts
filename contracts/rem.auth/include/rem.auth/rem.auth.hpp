@@ -206,4 +206,20 @@ namespace eosio {
       bool need_confirm(int32_t ptype) const;
    };
    /** @}*/ // end of @defgroup eosioauth rem.auth
+
+   vector<char> join( vector<vector<char>>&& vec, string delim = "*" ) {
+      vector<char> result;
+      std::size_t vec_size = vec.size();
+
+      std::size_t delim_index = vec_size - 1;
+      for (std::size_t i=0; i < vec_size; ++i) {
+         result.insert(result.end(), vec.at(i).begin(), vec.at(i).end());
+
+         if (delim_index - i > 0) {
+            result.insert(result.end(), delim.begin(), delim.end());
+         }
+      }
+
+      return result;
+   }
 } /// namespace eosio

@@ -4,7 +4,6 @@
 
 #include <rem.auth/rem.auth.hpp>
 #include <rem.system/rem.system.hpp>
-#include <rem.swap/rem.swap.hpp>
 #include <rem.oracle/rem.oracle.hpp>
 #include <rem.token/rem.token.hpp>
 
@@ -18,11 +17,13 @@ namespace eosio {
       require_auth(account);
       require_auth(payer);
 
-      auto pub_key_data = get_pub_key_data(pub_key);
-      string pub_key_data_str(std::begin(pub_key_data), std::end(pub_key_data));
+      string account_str = account.to_string();
+      vector<char> account_data(account_str.begin(), account_str.end());
+      vector<char> pub_key_data = get_pub_key_data(pub_key);
+      vector<char> payer_data(payer_str.begin(), payer_str.end());
 
-      string payload = join( { account.to_string(), pub_key_data_str, payer_str } );
-      checksum256 digest = sha256(payload.c_str(), payload.size());
+      vector<char> payload = join({ account_data, pub_key_data, payer_data });
+      checksum256 digest = sha256(payload.data(), payload.size());
       assert_recover_key(digest, signed_by_pub_key, pub_key);
 
       authkeys_tbl.emplace(get_self(), [&](auto &k) {
@@ -46,13 +47,14 @@ namespace eosio {
       name payer = is_payer ? account : name(payer_str);
       if (!is_payer) { require_auth(payer); }
 
-      auto pub_key_data = get_pub_key_data(pub_key);
-      string pub_key_data_str(std::begin(pub_key_data), std::end(pub_key_data));
-      auto new_pub_key_data = get_pub_key_data(new_pub_key);
-      string new_pub_key_data_str(std::begin(new_pub_key_data), std::end(new_pub_key_data));
+      string account_str = account.to_string();
+      vector<char> account_data(account_str.begin(), account_str.end());
+      vector<char> new_pub_key_data = get_pub_key_data(new_pub_key);
+      vector<char> pub_key_data = get_pub_key_data(pub_key);
+      vector<char> payer_data(payer_str.begin(), payer_str.end());
 
-      string payload = join( { account.to_string(), new_pub_key_data_str, pub_key_data_str, payer_str } );
-      checksum256 digest = sha256(payload.c_str(), payload.size());
+      vector<char> payload = join({ account_data, new_pub_key_data, pub_key_data, payer_data });
+      checksum256 digest = sha256(payload.data(), payload.size());
 
       public_key expected_new_pub_key = recover_key(digest, signed_by_new_pub_key);
       public_key expected_pub_key = recover_key(digest, signed_by_pub_key);
@@ -111,13 +113,13 @@ namespace eosio {
    void auth::revokeapp(const name &account, const public_key &revoke_pub_key,
                         const public_key &pub_key, const signature &signed_by_pub_key)
    {
-      auto revoke_pub_key_data = get_pub_key_data(revoke_pub_key);
-      string revoke_pub_key_data_str(std::begin(revoke_pub_key_data), std::end(revoke_pub_key_data));
-      auto pub_key_data = get_pub_key_data(pub_key);
-      string pub_key_data_str(std::begin(pub_key_data), std::end(pub_key_data));
+      string account_str = account.to_string();
+      vector<char> account_data(account_str.begin(), account_str.end());
+      vector<char> revoke_pub_key_data = get_pub_key_data(revoke_pub_key);
+      vector<char> pub_key_data = get_pub_key_data(pub_key);
 
-      string payload = join( { account.to_string(), revoke_pub_key_data_str, pub_key_data_str } );
-      checksum256 digest = sha256(payload.c_str(), payload.size());
+      vector<char> payload = join({ account_data, revoke_pub_key_data, pub_key_data });
+      checksum256 digest = sha256(payload.data(), payload.size());
 
       public_key expected_pub_key = recover_key(digest, signed_by_pub_key);
       check(expected_pub_key == pub_key, "expected key different than recovered application key");
@@ -135,11 +137,18 @@ namespace eosio {
    void auth::transfer(const name &from, const name &to, const asset &quantity, const string &memo,
                        const public_key &pub_key, const signature &signed_by_pub_key)
    {
-      auto pub_key_data = get_pub_key_data(pub_key);
-      string pub_key_data_str(std::begin(pub_key_data), std::end(pub_key_data));
+      string from_str = from.to_string();
+      string to_str = to.to_string();
+      string quantity_str = quantity.to_string();
+      vector<char> pub_key_data = get_pub_key_data(pub_key);
 
-      string payload = join( { from.to_string(), to.to_string(), quantity.to_string(), pub_key_data_str } );
-      checksum256 digest = sha256(payload.c_str(), payload.size());
+      vector<char> payload = join({
+         vector<char>(from_str.begin(), from_str.end()),
+         vector<char>(to_str.begin(), to_str.end()),
+         vector<char>(quantity_str.begin(), quantity_str.end()),
+         pub_key_data
+      });
+      checksum256 digest = sha256(payload.data(), payload.size());
 
       public_key expected_pub_key = recover_key(digest, signed_by_pub_key);
 
