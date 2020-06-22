@@ -8,7 +8,34 @@
 #include <rem.token/rem.token.hpp>
 
 namespace eosio {
+
    using eosiosystem::system_contract;
+
+   static inline vector<char> join( vector<vector<char>>&& vec, string delim = "*" )
+   {
+      vector<char> result;
+      std::size_t vec_size = vec.size();
+
+      std::size_t delim_index = vec_size - 1;
+      for (std::size_t i=0; i < vec_size; ++i) {
+         result.insert(result.end(), vec.at(i).begin(), vec.at(i).end());
+
+         if (delim_index - i > 0) {
+            result.insert(result.end(), delim.begin(), delim.end());
+         }
+      }
+
+      return result;
+   }
+
+   static inline vector<char> get_pub_key_data(const public_key &key)
+   {
+      vector<char> data_with_algorithm = pack<public_key>(key);
+
+      // skip the first byte which is the public key type (R1 (0x01) or K1 (0x02))
+      vector<char> data(data_with_algorithm.begin() + 1, data_with_algorithm.end());
+      return data;
+   }
 
    void auth::addkeyacc(const name &account, const public_key &pub_key, const signature &signed_by_pub_key,
                         const asset &price_limit, const name &payer)
@@ -302,15 +329,6 @@ namespace eosio {
 
       asset purchase_fee =  asset( quantity_auth.amount * price_per_auth, system_contract::get_core_symbol() );
       return purchase_fee;
-   }
-
-   vector<char> auth::get_pub_key_data(const public_key &key)
-   {
-      vector<char> data_with_algorithm = pack<public_key>(key);
-
-      // skip the first byte which is the public key type (R1 (0x01) or K1 (0x02))
-      vector<char> data(data_with_algorithm.begin() + 1, data_with_algorithm.end());
-      return data;
    }
 
    void auth::transfer_tokens(const name &from, const name &to, const asset &quantity, const string &memo)

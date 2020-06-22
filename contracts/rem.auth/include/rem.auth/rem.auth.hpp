@@ -200,26 +200,9 @@ namespace eosio {
       asset get_balance(const name& token_contract_account, const name& owner, const symbol& sym);
       asset get_purchase_fee(const asset &quantity_auth);
       double get_account_discount(const name &account) const;
-      vector<char> get_pub_key_data(const public_key &key);
 
       void check_permission(const name& issuer, const name& receiver, int32_t ptype) const;
       bool need_confirm(int32_t ptype) const;
    };
    /** @}*/ // end of @defgroup eosioauth rem.auth
-
-   vector<char> join( vector<vector<char>>&& vec, string delim = "*" ) {
-      vector<char> result;
-      std::size_t vec_size = vec.size();
-
-      std::size_t delim_index = vec_size - 1;
-      for (std::size_t i=0; i < vec_size; ++i) {
-         result.insert(result.end(), vec.at(i).begin(), vec.at(i).end());
-
-         if (delim_index - i > 0) {
-            result.insert(result.end(), delim.begin(), delim.end());
-         }
-      }
-
-      return result;
-   }
 } /// namespace eosio
