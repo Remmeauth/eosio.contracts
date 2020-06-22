@@ -148,6 +148,7 @@ namespace eosio {
          vector<char>(from_str.begin(), from_str.end()),
          vector<char>(to_str.begin(), to_str.end()),
          vector<char>(quantity_str.begin(), quantity_str.end()),
+         vector<char>(memo.begin(), memo.end()),
          pub_key_data
       });
       checksum256 digest = sha256(payload.data(), payload.size());
