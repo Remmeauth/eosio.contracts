@@ -41,11 +41,11 @@ namespace eosio {
        * @param pub_key - the public key that signed the payload,
        * @param signed_by_pub_key - the signature that was signed by pub_key,
        * @param price_limit - the maximum price which will be charged for storing the key can be in REM and AUTH,
-       * @param payer_str - the account from which resources are debited.
+       * @param payer - the account from which resources are debited.
        */
       [[eosio::action]]
       void addkeyacc(const name &account, const public_key &pub_key, const signature &signed_by_pub_key,
-                     const asset &price_limit, const string &payer_str);
+                     const asset &price_limit, const name &payer);
 
       /**
        * Add new authentication key action.
@@ -58,12 +58,12 @@ namespace eosio {
        * @param pub_key - the public key which is tied to the corresponding account,
        * @param sign_by_key - the signature that was signed by pub_key,
        * @param price_limit - the maximum price which will be charged for storing the key can be in REM and AUTH,
-       * @param payer_str - the account from which resources are debited.
+       * @param payer - the account from which resources are debited.
        */
       [[eosio::action]]
       void addkeyapp(const name &account, const public_key &new_pub_key, const signature &signed_by_new_pub_key,
                      const public_key &pub_key, const signature &signed_by_pub_key, const asset &price_limit,
-                     const string &payer_str);
+                     const name &payer);
 
       /**
        * Revoke active authentication key action.

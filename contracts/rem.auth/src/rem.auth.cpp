@@ -11,13 +11,14 @@ namespace eosio {
    using eosiosystem::system_contract;
 
    void auth::addkeyacc(const name &account, const public_key &pub_key, const signature &signed_by_pub_key,
-                        const asset &price_limit, const string &payer_str)
+                        const asset &price_limit, const name &payer)
    {
-      name payer = payer_str.empty() ? account : name(payer_str);
+      name payer_name = bool(payer) ? payer : account;
       require_auth(account);
-      require_auth(payer);
+      require_auth(payer_name);
 
       string account_str = account.to_string();
+      string payer_str = payer.to_string();
       vector<char> account_data(account_str.begin(), account_str.end());
       vector<char> pub_key_data = get_pub_key_data(pub_key);
       vector<char> payer_data(payer_str.begin(), payer_str.end());
@@ -35,19 +36,20 @@ namespace eosio {
          k.revoked_at         = 0; // if not revoked == 0
       });
 
-      sub_storage_fee(payer, price_limit);
+      sub_storage_fee(payer_name, price_limit);
       cleanupkeys();
    }
 
    void auth::addkeyapp(const name &account, const public_key &new_pub_key, const signature &signed_by_new_pub_key,
                         const public_key &pub_key, const signature &signed_by_pub_key, const asset &price_limit,
-                        const string &payer_str)
+                        const name &payer)
    {
-      bool is_payer = payer_str.empty();
-      name payer = is_payer ? account : name(payer_str);
-      if (!is_payer) { require_auth(payer); }
+      bool is_payer = bool(payer);
+      name payer_name = is_payer ? payer : account;
+      if (is_payer) { require_auth(payer_name); }
 
       string account_str = account.to_string();
+      string payer_str = payer.to_string();
       vector<char> account_data(account_str.begin(), account_str.end());
       vector<char> new_pub_key_data = get_pub_key_data(new_pub_key);
       vector<char> pub_key_data = get_pub_key_data(pub_key);
@@ -72,7 +74,7 @@ namespace eosio {
          k.revoked_at       = 0; // if not revoked == 0
       });
 
-      sub_storage_fee(payer, price_limit);
+      sub_storage_fee(payer_name, price_limit);
       cleanupkeys();
    }
 
