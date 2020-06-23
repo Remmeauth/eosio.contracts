@@ -649,6 +649,8 @@ namespace eosiosystem {
 
       public:
          static constexpr eosio::name active_permission{"active"_n};
+
+         static constexpr eosio::name auth_account{"rem.auth"_n};
          static constexpr eosio::name token_account{"rem.token"_n};
          static constexpr eosio::name ram_account{"rem.ram"_n};
          static constexpr eosio::name ramfee_account{"rem.ramfee"_n};
@@ -664,9 +666,11 @@ namespace eosiosystem {
          static constexpr eosio::name rex_account{"rem.rex"_n};
          static constexpr eosio::name null_account{"rem.null"_n};
          static constexpr eosio::name rem_usd_pair{"rem.usd"_n};
-         static constexpr symbol rex_symbol = symbol(symbol_code("REX"), 4);
 
-         static constexpr uint8_t max_block_producers      = 21;
+         static constexpr symbol rex_symbol  = symbol(symbol_code("REX"), 4);
+         static constexpr symbol auth_symbol = symbol(symbol_code("AUTH"), 4);
+
+         static constexpr uint8_t max_block_producers = 21;
 
 
          /**

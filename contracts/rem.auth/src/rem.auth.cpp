@@ -4,52 +4,86 @@
 
 #include <rem.auth/rem.auth.hpp>
 #include <rem.system/rem.system.hpp>
-#include <rem.swap/rem.swap.hpp>
 #include <rem.oracle/rem.oracle.hpp>
 #include <rem.token/rem.token.hpp>
 
 namespace eosio {
+
    using eosiosystem::system_contract;
 
-   void auth::addkeyacc(const name &account, const string &pub_key_str, const signature &signed_by_pub_key,
-                        const string &extra_pub_key, const asset &price_limit, const string &payer_str)
+   static inline vector<char> join( vector<vector<char>>&& vec, string delim = "*" )
    {
-      name payer = payer_str.empty() ? account : name(payer_str);
-      require_auth(account);
-      require_auth(payer);
+      vector<char> result;
+      std::size_t vec_size = vec.size();
 
-      public_key pub_key = string_to_public_key(pub_key_str);
-      string payload = join( { account.to_string(), pub_key_str, extra_pub_key, payer_str } );
-      checksum256 digest = sha256(payload.c_str(), payload.size());
+      std::size_t delim_index = vec_size - 1;
+      for (std::size_t i=0; i < vec_size; ++i) {
+         result.insert(result.end(), vec.at(i).begin(), vec.at(i).end());
+
+         if (delim_index - i > 0) {
+            result.insert(result.end(), delim.begin(), delim.end());
+         }
+      }
+
+      return result;
+   }
+
+   static inline vector<char> get_pub_key_data(const public_key &key)
+   {
+      vector<char> data_with_algorithm = pack<public_key>(key);
+
+      // skip the first byte which is the public key type (R1 (0x01) or K1 (0x02))
+      vector<char> data(data_with_algorithm.begin() + 1, data_with_algorithm.end());
+      return data;
+   }
+
+   void auth::addkeyacc(const name &account, const public_key &pub_key, const signature &signed_by_pub_key,
+                        const asset &price_limit, const name &payer)
+   {
+      name payer_name = bool(payer) ? payer : account;
+      require_auth(account);
+      require_auth(payer_name);
+
+      string account_str = account.to_string();
+      string payer_str = payer.to_string();
+      vector<char> account_data(account_str.begin(), account_str.end());
+      vector<char> pub_key_data = get_pub_key_data(pub_key);
+      vector<char> payer_data(payer_str.begin(), payer_str.end());
+
+      vector<char> payload = join({ account_data, pub_key_data, payer_data });
+      checksum256 digest = sha256(payload.data(), payload.size());
       assert_recover_key(digest, signed_by_pub_key, pub_key);
 
       authkeys_tbl.emplace(get_self(), [&](auto &k) {
-         k.key              = authkeys_tbl.available_primary_key();
-         k.owner            = account;
-         k.pub_key          = pub_key;
-         k.extra_pub_key    = extra_pub_key;
-         k.not_valid_before = current_time_point();
-         k.not_valid_after  = current_time_point() + key_lifetime;
-         k.revoked_at       = 0; // if not revoked == 0
+         k.key                = authkeys_tbl.available_primary_key();
+         k.owner              = account;
+         k.pub_key            = pub_key;
+         k.not_valid_before   = current_time_point();
+         k.not_valid_after    = current_time_point() + key_lifetime;
+         k.revoked_at         = 0; // if not revoked == 0
       });
 
-      sub_storage_fee(payer, price_limit);
+      sub_storage_fee(payer_name, price_limit);
       cleanupkeys();
    }
 
-   void auth::addkeyapp(const name &account, const string &new_pub_key_str, const signature &signed_by_new_pub_key,
-                        const string &extra_pub_key, const string &pub_key_str, const signature &signed_by_pub_key,
-                        const asset &price_limit, const string &payer_str)
+   void auth::addkeyapp(const name &account, const public_key &new_pub_key, const signature &signed_by_new_pub_key,
+                        const public_key &pub_key, const signature &signed_by_pub_key, const asset &price_limit,
+                        const name &payer)
    {
-      bool is_payer = payer_str.empty();
-      name payer = is_payer ? account : name(payer_str);
-      if (!is_payer) { require_auth(payer); }
+      bool is_payer = bool(payer);
+      name payer_name = is_payer ? payer : account;
+      if (is_payer) { require_auth(payer_name); }
 
-      string payload = join( { account.to_string(), new_pub_key_str, extra_pub_key, pub_key_str, payer_str } );
-      checksum256 digest = sha256(payload.c_str(), payload.size());
+      string account_str = account.to_string();
+      string payer_str = payer.to_string();
+      vector<char> account_data(account_str.begin(), account_str.end());
+      vector<char> new_pub_key_data = get_pub_key_data(new_pub_key);
+      vector<char> pub_key_data = get_pub_key_data(pub_key);
+      vector<char> payer_data(payer_str.begin(), payer_str.end());
 
-      public_key new_pub_key = string_to_public_key(new_pub_key_str);
-      public_key pub_key = string_to_public_key(pub_key_str);
+      vector<char> payload = join({ account_data, new_pub_key_data, pub_key_data, payer_data });
+      checksum256 digest = sha256(payload.data(), payload.size());
 
       public_key expected_new_pub_key = recover_key(digest, signed_by_new_pub_key);
       public_key expected_pub_key = recover_key(digest, signed_by_pub_key);
@@ -62,13 +96,12 @@ namespace eosio {
          k.key              = authkeys_tbl.available_primary_key();
          k.owner            = account;
          k.pub_key          = new_pub_key;
-         k.extra_pub_key    = extra_pub_key;
          k.not_valid_before = current_time_point();
          k.not_valid_after  = current_time_point() + key_lifetime;
          k.revoked_at       = 0; // if not revoked == 0
       });
 
-      sub_storage_fee(payer, price_limit);
+      sub_storage_fee(payer_name, price_limit);
       cleanupkeys();
    }
 
@@ -93,10 +126,9 @@ namespace eosio {
       return it;
    }
 
-   void auth::revokeacc(const name &account, const string &revoke_pub_key_str)
+   void auth::revokeacc(const name &account, const public_key &revoke_pub_key)
    {
       require_auth(account);
-      public_key revoke_pub_key = string_to_public_key(revoke_pub_key_str);
       require_app_auth(account, revoke_pub_key);
 
       auto it = find_active_appkey(account, revoke_pub_key);
@@ -107,14 +139,16 @@ namespace eosio {
       });
    }
 
-   void auth::revokeapp(const name &account, const string &revoke_pub_key_str,
-                        const string &pub_key_str, const signature &signed_by_pub_key)
+   void auth::revokeapp(const name &account, const public_key &revoke_pub_key,
+                        const public_key &pub_key, const signature &signed_by_pub_key)
    {
-      public_key revoke_pub_key = string_to_public_key(revoke_pub_key_str);
-      public_key pub_key = string_to_public_key(pub_key_str);
+      string account_str = account.to_string();
+      vector<char> account_data(account_str.begin(), account_str.end());
+      vector<char> revoke_pub_key_data = get_pub_key_data(revoke_pub_key);
+      vector<char> pub_key_data = get_pub_key_data(pub_key);
 
-      string payload = join( { account.to_string(), revoke_pub_key_str, pub_key_str } );
-      checksum256 digest = sha256(payload.c_str(), payload.size());
+      vector<char> payload = join({ account_data, revoke_pub_key_data, pub_key_data });
+      checksum256 digest = sha256(payload.data(), payload.size());
 
       public_key expected_pub_key = recover_key(digest, signed_by_pub_key);
       check(expected_pub_key == pub_key, "expected key different than recovered application key");
@@ -130,12 +164,22 @@ namespace eosio {
    }
 
    void auth::transfer(const name &from, const name &to, const asset &quantity, const string &memo,
-                       const string &pub_key_str, const signature &signed_by_pub_key)
+                       const public_key &pub_key, const signature &signed_by_pub_key)
    {
-      string payload = join( { from.to_string(), to.to_string(), quantity.to_string(), pub_key_str } );
-      checksum256 digest = sha256(payload.c_str(), payload.size());
+      string from_str = from.to_string();
+      string to_str = to.to_string();
+      string quantity_str = quantity.to_string();
+      vector<char> pub_key_data = get_pub_key_data(pub_key);
 
-      public_key pub_key = string_to_public_key(pub_key_str);
+      vector<char> payload = join({
+         vector<char>(from_str.begin(), from_str.end()),
+         vector<char>(to_str.begin(), to_str.end()),
+         vector<char>(quantity_str.begin(), quantity_str.end()),
+         vector<char>(memo.begin(), memo.end()),
+         pub_key_data
+      });
+      checksum256 digest = sha256(payload.data(), payload.size());
+
       public_key expected_pub_key = recover_key(digest, signed_by_pub_key);
 
       check(expected_pub_key == pub_key, "expected key different than recovered application key");
@@ -150,10 +194,10 @@ namespace eosio {
       check(quantity.is_valid(), "invalid quantity");
       check(quantity.amount > 0, "quantity should be a positive value");
       check(max_price > 0, "maximum price should be a positive value");
-      check(quantity.symbol == auth_symbol, "symbol precision mismatch");
+      check(quantity.symbol == system_contract::auth_symbol, "symbol precision mismatch");
 
       remoracle::remprice_idx remprice_table(system_contract::oracle_account, system_contract::oracle_account.value);
-      auto remusd_it = remprice_table.find("rem.usd"_n.value);
+      auto remusd_it = remprice_table.find(system_contract::rem_usd_pair.value);
       check(remusd_it != remprice_table.end(), "pair does not exist");
 
       double remusd_price = remusd_it->price;
@@ -188,45 +232,48 @@ namespace eosio {
 
    void auth::sub_storage_fee(const name &account, const asset &price_limit)
    {
-      bool is_pay_by_auth = (price_limit.symbol == auth_symbol);
+      bool is_pay_by_auth = (price_limit.symbol == system_contract::auth_symbol);
       bool is_pay_by_rem  = (price_limit.symbol == system_contract::get_core_symbol());
 
       check(is_pay_by_rem || is_pay_by_auth, "unavailable payment method");
       check(price_limit.is_valid(), "invalid price limit");
       check(price_limit.amount > 0, "price limit should be a positive value");
 
-      asset auth_credit_supply = token::get_supply(system_contract::token_account, auth_symbol.code());
+      asset auth_credit_supply = token::get_supply(system_contract::token_account, system_contract::auth_symbol.code());
+      asset key_storage_fee_in_auth = asset(key_storage_fee, system_contract::auth_symbol);
       asset rem_balance = get_balance(system_contract::token_account, get_self(), system_contract::get_core_symbol());
 
       if (is_pay_by_rem) {
          double account_discount = get_account_discount(account);
-         asset purchase_fee = get_purchase_fee(key_storage_fee);
+         asset purchase_fee = get_purchase_fee(key_storage_fee_in_auth);
          purchase_fee.amount *= account_discount;
          check(purchase_fee < price_limit, "currently REM/USD price is above price limit");
 
          transfer_tokens(account, get_self(), purchase_fee, "AUTH credits purchase fee");
 
-         auth_credit_supply += key_storage_fee;
+         auth_credit_supply += key_storage_fee_in_auth;
          rem_balance += purchase_fee;
       } else {
          check(auth_credit_supply.amount > 0, "overdrawn balance");
-         transfer_tokens(account, get_self(), key_storage_fee, "AUTH credits purchase fee");
+         transfer_tokens(account, get_self(), key_storage_fee_in_auth, "AUTH credits purchase fee");
 
          token::retire_action retire(system_contract::token_account, { get_self(), system_contract::active_permission });
-         retire.send(key_storage_fee, "the use of AUTH credit to store a key");
+         retire.send(key_storage_fee_in_auth, "the use of AUTH credit to store a key");
       }
 
       double reward_amount = rem_balance.amount / double(auth_credit_supply.amount);
 
       system_contract::torewards_action torewards(system_account, { get_self(), system_contract::active_permission });
-      torewards.send(get_self(), asset{static_cast<int64_t>(reward_amount * key_storage_fee.amount), system_contract::get_core_symbol()});
+      torewards.send(get_self(), asset{static_cast<int64_t>(reward_amount * key_storage_fee_in_auth.amount), system_contract::get_core_symbol()});
    }
 
    double auth::get_account_discount(const name &account) const
    {
+      const double default_account_discount = 1;
+
       attribute_info_table attributes_info(get_self(), get_self().value);
       if (attributes_info.begin() == attributes_info.end()) {
-         return 1;
+         return default_account_discount;
       }
 
       vector<char> data;
@@ -246,7 +293,7 @@ namespace eosio {
 
          return account_discount;
       }
-      return 1;
+      return default_account_discount;
    }
 
    void auth::require_app_auth(const name &account, const public_key &pub_key)
@@ -264,20 +311,24 @@ namespace eosio {
    {
       accounts accountstable(token_contract_account, owner.value);
       const auto it = accountstable.find(sym.code().raw());
-      return it == accountstable.end() ? asset{0, sym} : it->balance;
+
+      asset account_balance = (it == accountstable.end()) ? asset{0, sym} : it->balance;
+      return account_balance;
    }
 
    asset auth::get_purchase_fee(const asset &quantity_auth)
    {
       remoracle::remprice_idx remprice_table(system_contract::oracle_account, system_contract::oracle_account.value);
-      auto remusd_it = remprice_table.find("rem.usd"_n.value);
+      auto remusd_it = remprice_table.find(system_contract::rem_usd_pair.value);
       check(remusd_it != remprice_table.end(), "pair does not exist");
 
       double remusd_price = remusd_it->price;
-      int64_t purchase_fee = 1 / remusd_price;
+      int64_t price_per_auth = 1 / remusd_price;
 
-      check(purchase_fee > 0, "invalid REM/USD price");
-      return asset{ quantity_auth.amount * purchase_fee, system_contract::get_core_symbol() };
+      check(price_per_auth > 0, "invalid REM/USD price");
+
+      asset purchase_fee =  asset( quantity_auth.amount * price_per_auth, system_contract::get_core_symbol() );
+      return purchase_fee;
    }
 
    void auth::transfer_tokens(const name &from, const name &to, const asset &quantity, const string &memo)

@@ -38,15 +38,14 @@ namespace eosio {
        * @details Add new authentication key by user account.
        *
        * @param account - the owner account to execute the addkeyacc action for,
-       * @param pub_key_str - the public key that signed the payload,
-       * @param signed_by_pub_key - the signature that was signed by pub_key_str,
+       * @param pub_key - the public key that signed the payload,
+       * @param signed_by_pub_key - the signature that was signed by pub_key,
        * @param price_limit - the maximum price which will be charged for storing the key can be in REM and AUTH,
-       * @param extra_pub_key - the public key for authorization in external services,
-       * @param payer_str - the account from which resources are debited.
+       * @param payer - the account from which resources are debited.
        */
       [[eosio::action]]
-      void addkeyacc(const name &account, const string &pub_key_str, const signature &signed_by_pub_key,
-                     const string &extra_pub_key, const asset &price_limit, const string &payer_str);
+      void addkeyacc(const name &account, const public_key &pub_key, const signature &signed_by_pub_key,
+                     const asset &price_limit, const name &payer);
 
       /**
        * Add new authentication key action.
@@ -54,18 +53,17 @@ namespace eosio {
        * @details Add new authentication key by using correspond to the account authentication key.
        *
        * @param account - the owner account to execute the addkeyapp action for,
-       * @param new_pub_key_str - the public key that will be added,
-       * @param signed_by_new_pub_key - the signature that was signed by new_pub_key_str,
-       * @param extra_pub_key - the public key for authorization in external services,
-       * @param pub_key_str - the public key which is tied to the corresponding account,
-       * @param sign_by_key - the signature that was signed by pub_key_str,
+       * @param new_pub_key - the public key that will be added,
+       * @param signed_by_new_pub_key - the signature that was signed by new_pub_key,
+       * @param pub_key - the public key which is tied to the corresponding account,
+       * @param sign_by_key - the signature that was signed by pub_key,
        * @param price_limit - the maximum price which will be charged for storing the key can be in REM and AUTH,
-       * @param payer_str - the account from which resources are debited.
+       * @param payer - the account from which resources are debited.
        */
       [[eosio::action]]
-      void addkeyapp(const name &account, const string &new_pub_key_str, const signature &signed_by_new_pub_key,
-                     const string &extra_pub_key, const string &pub_key_str, const signature &signed_by_pub_key,
-                     const asset &price_limit, const string &payer_str);
+      void addkeyapp(const name &account, const public_key &new_pub_key, const signature &signed_by_new_pub_key,
+                     const public_key &pub_key, const signature &signed_by_pub_key, const asset &price_limit,
+                     const name &payer);
 
       /**
        * Revoke active authentication key action.
@@ -73,10 +71,10 @@ namespace eosio {
        * @details Revoke already added active authentication key by user account.
        *
        * @param account - the owner account to execute the revokeacc action for,
-       * @param pub_key_str - the public key to be revoked on the corresponding account.
+       * @param pub_key - the public key to be revoked on the corresponding account.
        */
       [[eosio::action]]
-      void revokeacc(const name &account, const string &revoke_pub_key_str);
+      void revokeacc(const name &account, const public_key &revoke_pub_key);
 
       /**
        * Revoke active authentication key action.
@@ -84,13 +82,13 @@ namespace eosio {
        * @details Revoke already added active authentication key by using correspond to account authentication key.
        *
        * @param account - the owner account to execute the revokeapp action for,
-       * @param revoke_pub_key_str - the public key to be revoked on the corresponding account,
-       * @param pub_key_str - the public key which is tied to the corresponding account,
-       * @param signed_by_pub_key - the signature that was signed by pub_key_str.
+       * @param revoke_pub_key - the public key to be revoked on the corresponding account,
+       * @param pub_key - the public key which is tied to the corresponding account,
+       * @param signed_by_pub_key - the signature that was signed by pub_key.
        */
       [[eosio::action]]
-      void revokeapp(const name &account, const string &revoke_pub_key_str,
-                     const string &pub_key_str, const signature &signed_by_pub_key);
+      void revokeapp(const name &account, const public_key &revoke_pub_key,
+                     const public_key &pub_key, const signature &signed_by_pub_key);
 
       /**
        * Buy AUTH credits action.
@@ -115,12 +113,12 @@ namespace eosio {
        * @param to - the account to be transferred to,
        * @param quantity - the quantity of tokens to be transferred,
        * @param memo - the memo string to accompany the transaction,
-       * @param pub_key_str - the public key which is tied to the corresponding account,
-       * @param signed_by_pub_key - the signature that was signed by pub_key_str,
+       * @param pub_key - the public key which is tied to the corresponding account,
+       * @param signed_by_pub_key - the signature that was signed by pub_key,
        */
       [[eosio::action]]
       void transfer(const name &from, const name &to, const asset &quantity, const string &memo,
-                    const string &pub_key_str, const signature &signed_by_pub_key);
+                    const public_key &pub_key, const signature &signed_by_pub_key);
 
       /**
        * Cleanup authkeys table action.
@@ -137,21 +135,21 @@ namespace eosio {
       using buyauth_action   = action_wrapper<"buyauth"_n,     &auth::buyauth>;
       using transfer_action  = action_wrapper<"transfer"_n,   &auth::transfer>;
    private:
-      static constexpr symbol auth_symbol{"AUTH", 4};
       static constexpr name system_account = "rem"_n;
 
-      const asset key_storage_fee{1'0000, auth_symbol};
       const time_point key_lifetime = time_point(days(360));
       const time_point key_cleanup_time = time_point(days(180)); // the time that should be passed after not_valid_after to delete key
+      static constexpr int64_t key_storage_fee = 1'0000;
+
+      enum class pub_key_algorithm : int8_t { ES256K1 = 0, ES256 };
 
       struct [[eosio::table]] authkeys {
-         uint64_t          key;
-         name              owner;
-         public_key        pub_key;
-         string            extra_pub_key;
-         block_timestamp   not_valid_before;
-         block_timestamp   not_valid_after;
-         uint32_t          revoked_at;
+         uint64_t             key;
+         name                 owner;
+         public_key           pub_key;
+         block_timestamp      not_valid_before;
+         block_timestamp      not_valid_after;
+         uint32_t             revoked_at;
 
       static fixed_bytes<32> get_pub_key_hash(public_key key) {
          bool is_k1_type = std::get_if<0>(&key);
@@ -173,7 +171,7 @@ namespace eosio {
       uint64_t by_not_valid_after()const   { return not_valid_after.to_time_point().elapsed.count(); }
       uint64_t by_revoked()const           { return revoked_at;  }
 
-      EOSLIB_SERIALIZE( authkeys, (key)(owner)(pub_key)(extra_pub_key)(not_valid_before)(not_valid_after)(revoked_at))
+      EOSLIB_SERIALIZE( authkeys, (key)(owner)(pub_key)(not_valid_before)(not_valid_after)(revoked_at))
       };
       typedef multi_index<"authkeys"_n, authkeys,
             indexed_by<"bypubkey"_n,     const_mem_fun <authkeys, fixed_bytes<32>, &authkeys::by_public_key>>,
@@ -191,19 +189,6 @@ namespace eosio {
          uint64_t primary_key()const { return balance.symbol.code().raw(); }
       };
       typedef multi_index<"accounts"_n, account> accounts;
-
-      struct [[eosio::table]] remprice {
-         name                    pair;
-         double                  price = 0;
-         vector<double>          price_points;
-         block_timestamp         last_update;
-
-         uint64_t primary_key()const { return pair.value; }
-
-         // explicit serialization macro is not necessary, used here only to improve compilation time
-         EOSLIB_SERIALIZE( remprice, (pair)(price)(price_points)(last_update))
-      };
-      typedef multi_index< "remprice"_n, remprice> remprice_idx;
 
       void sub_storage_fee(const name &account, const asset &price_limit);
       void transfer_tokens(const name &from, const name &to, const asset &quantity, const string &memo);
