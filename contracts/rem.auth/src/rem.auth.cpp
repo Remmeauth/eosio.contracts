@@ -67,6 +67,49 @@ namespace eosio {
       cleanupkeys();
    }
 
+   void auth::execaction(const name &account, action& act, const block_timestamp &action_timestamp,
+                         const public_key &pub_key, const signature &signed_by_pub_key, const name &payer)
+   {
+      bool is_payer = bool(payer);
+      name payer_name = is_payer ? payer : account;
+      if (is_payer) { require_auth(payer_name); }
+
+      auto auths_level = act.authorization;
+      auto permission  = auths_level.front();
+      time_point action_timepoint = action_timestamp.to_time_point();
+      auto action_expiration_delta = current_time_point().time_since_epoch() - action_sig_expiration_time.time_since_epoch();
+
+      check(auths_level.size() == 1, "action authorization should contain one permission");
+      check(permission.actor == account, "missing authority of " + account.to_string());
+      check(time_point(action_expiration_delta) < action_timepoint, "action timestamp expired");
+
+      string payer_str = payer.to_string();
+      vector<char> account_data = pack(account);
+      vector<char> action_data = pack(act);
+      vector<char> action_timestamp_data = pack(action_timestamp);
+      vector<char> pub_key_data = get_pub_key_data(pub_key);
+      vector<char> payer_data(payer_str.begin(), payer_str.end());
+
+      vector<char> payload = join({ account_data, action_data, action_timestamp_data, pub_key_data, payer_data });
+      checksum256 digest = sha256(payload.data(), payload.size());
+
+      assert_recover_key(digest, signed_by_pub_key, pub_key);
+      require_app_auth(account, pub_key);
+
+      auto execaction_idx = execaction_tbl.get_index<"byhash"_n>();
+      auto action_it = execaction_idx.find(execaction_data::get_action_hash(digest));
+      check(action_it == execaction_idx.end(), "the action has already been executed");
+
+      execaction_tbl.emplace(get_self(), [&](auto &a) {
+         a.key              = execaction_tbl.available_primary_key();
+         a.action_id        = digest;
+         a.action_timestamp = action_timestamp;
+      });
+
+      act.send();
+      cleanup_actions();
+   }
+
    void auth::addkeyapp(const name &account, const public_key &new_pub_key, const signature &signed_by_new_pub_key,
                         const public_key &pub_key, const signature &signed_by_pub_key, const asset &price_limit,
                         const name &payer)
@@ -215,16 +258,32 @@ namespace eosio {
    }
 
    void auth::cleanupkeys() {
-      const uint8_t max_clear_depth = 10;
+      const uint8_t max_cleanup_depth = 10;
       size_t i = 0;
       for (auto _table_itr = authkeys_tbl.begin(); _table_itr != authkeys_tbl.end();) {
          time_point not_valid_after = _table_itr->not_valid_after.to_time_point();
          bool not_expired = time_point_sec(current_time_point()) <= not_valid_after + key_cleanup_time;
 
-         if (not_expired || i >= max_clear_depth) {
+         if (not_expired || i >= max_cleanup_depth) {
             break;
          } else {
             _table_itr = authkeys_tbl.erase(_table_itr);
+            ++i;
+         }
+      }
+   }
+
+   void auth::cleanup_actions() {
+      const uint8_t max_cleanup_depth = 10;
+      size_t i = 0;
+      for (auto _table_itr = execaction_tbl.begin(); _table_itr != execaction_tbl.end();) {
+         time_point action_exec_time = _table_itr->action_timestamp.to_time_point();
+         bool not_expired = time_point_sec(current_time_point()) <= action_exec_time + action_expiration_time;
+
+         if (not_expired || i >= max_cleanup_depth) {
+            break;
+         } else {
+            _table_itr = execaction_tbl.erase(_table_itr);
             ++i;
          }
       }
