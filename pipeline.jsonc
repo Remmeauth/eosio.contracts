@@ -5,7 +5,7 @@
         "dependencies": // dependencies to pull for a build of contracts, by branch, tag, or commit hash
         {
             "eosio": "develop",
-            "eosio.cdt": "release/1.7.x"
+            "eosio.cdt": "1333c50ee50a3dcaf4619d53ed6932d4513637c5"
         }
     }
 }
