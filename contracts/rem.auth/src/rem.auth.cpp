@@ -68,12 +68,8 @@ namespace eosio {
    }
 
    void auth::execaction(const name &account, action& act, const block_timestamp &action_timestamp,
-                         const public_key &pub_key, const signature &signed_by_pub_key, const name &payer)
+                         const public_key &pub_key, const signature &action_data_signature)
    {
-      bool is_payer = bool(payer);
-      name payer_name = is_payer ? payer : account;
-      if (is_payer) { require_auth(payer_name); }
-
       auto auths_level = act.authorization;
       auto permission  = auths_level.front();
       time_point action_timepoint = action_timestamp.to_time_point();
@@ -83,17 +79,15 @@ namespace eosio {
       check(permission.actor == account, "missing authority of " + account.to_string());
       check(time_point(action_expiration_delta) < action_timepoint, "action timestamp expired");
 
-      string payer_str = payer.to_string();
       vector<char> account_data = pack(account);
       vector<char> action_data = pack(act);
       vector<char> action_timestamp_data = pack(action_timestamp);
       vector<char> pub_key_data = get_pub_key_data(pub_key);
-      vector<char> payer_data(payer_str.begin(), payer_str.end());
 
-      vector<char> payload = join({ account_data, action_data, action_timestamp_data, pub_key_data, payer_data });
+      vector<char> payload = join({ account_data, action_data, action_timestamp_data, pub_key_data });
       checksum256 digest = sha256(payload.data(), payload.size());
 
-      assert_recover_key(digest, signed_by_pub_key, pub_key);
+      assert_recover_key(digest, action_data_signature, pub_key);
       require_app_auth(account, pub_key);
 
       auto execaction_idx = execaction_tbl.get_index<"byhash"_n>();

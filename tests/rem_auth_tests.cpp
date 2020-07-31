@@ -175,14 +175,13 @@ public:
    }
 
    auto execaction(const name &account, const action &act, const time_point &action_timestamp, const crypto::public_key &pub_key,
-                   const crypto::signature &signed_by_pub_key, const name &payer, const vector<permission_level>& auths) {
+                   const crypto::signature &action_data_signature, const vector<permission_level>& auths) {
       auto r = base_tester::push_action(N(rem.auth), N(execaction), auths, mvo()
          ("account",  account)
          ("act", act )
          ("action_timestamp", action_timestamp )
          ("pub_key", pub_key )
-         ("signed_by_pub_key", signed_by_pub_key )
-         ("payer", payer )
+         ("action_data_signature", action_data_signature )
       );
       produce_block();
       return r;
@@ -1848,15 +1847,15 @@ BOOST_FIXTURE_TEST_CASE( execaction_test, rem_auth_tester ) {
 
       auto payload = join( {
                         string(account_data.begin(), account_data.end()), string(packed_action.begin(), packed_action.end()),
-                        string(action_timestamp_data.begin(), action_timestamp_data.end()), pub_key_to_bin_string(key_pub), payer.to_string()
+                        string(action_timestamp_data.begin(), action_timestamp_data.end()), pub_key_to_bin_string(key_pub)
                      } );
       sha256 digest_execaction = sha256::hash(payload);
-      auto signed_by_key_execaction = key_priv.sign(digest_execaction);
+      auto action_data_signature = key_priv.sign(digest_execaction);
 
       auto account_balance_before = get_balance(account);
       auto to_account_balance_before = get_balance(to_account);
 
-      execaction(account, act, action_timestamp, key_pub, signed_by_key_execaction, payer, auths_level);
+      execaction(account, act, action_timestamp, key_pub, action_data_signature, auths_level);
 
       auto account_balance_after = get_balance(account);
       auto to_account_balance_after = get_balance(to_account);
@@ -1865,11 +1864,8 @@ BOOST_FIXTURE_TEST_CASE( execaction_test, rem_auth_tester ) {
       BOOST_REQUIRE_EQUAL(to_account_balance_before + transfer_quantity, to_account_balance_after);
 
       // missing authority of proda
-      BOOST_REQUIRE_THROW(execaction(N(prodc), act, action_timestamp, key_pub, signed_by_key_execaction, payer, auths_level),
+      BOOST_REQUIRE_THROW(execaction(N(prodc), act, action_timestamp, key_pub, action_data_signature, auths_level),
                           eosio_assert_message_exception);
-      // missing authority of producer1
-      BOOST_REQUIRE_THROW(execaction(account, act, action_timestamp, key_pub, signed_by_key_execaction, N(producer1), auths_level),
-                          missing_auth_exception);
 
       auths_level.push_back(permission_level{N(prodc), config::active_name});
       action act_with_invalid_auth = get_action(N(rem.token), N(transfer), auths_level, abi_ser_token, mvo()
@@ -1879,17 +1875,17 @@ BOOST_FIXTURE_TEST_CASE( execaction_test, rem_auth_tester ) {
                                                 ("memo", "test transfer"));
 
       // authorization should contain one permission
-      BOOST_REQUIRE_THROW(execaction(account, act_with_invalid_auth, action_timestamp, key_pub, signed_by_key_execaction, payer, auths_level),
+      BOOST_REQUIRE_THROW(execaction(account, act_with_invalid_auth, action_timestamp, key_pub, action_data_signature, auths_level),
                           eosio_assert_message_exception);
       // sign payload by another private key
       crypto::private_key new_key_priv = crypto::private_key::generate();
       crypto::public_key new_key_pub   = key_priv.get_public_key();
-      auto signed_by_new_key_execaction = new_key_priv.sign(digest_execaction);
+      auto new_action_data_signature = new_key_priv.sign(digest_execaction);
       // Error expected key different than recovered key
-      BOOST_REQUIRE_THROW(execaction(account, act, action_timestamp, key_pub, signed_by_new_key_execaction, payer, auths_level),
+      BOOST_REQUIRE_THROW(execaction(account, act, action_timestamp, key_pub, new_action_data_signature, auths_level),
                           crypto_api_exception);
       // account has no linked application keys
-      BOOST_REQUIRE_THROW(execaction(account, act, action_timestamp, new_key_pub, signed_by_new_key_execaction, payer, auths_level),
+      BOOST_REQUIRE_THROW(execaction(account, act, action_timestamp, new_key_pub, new_action_data_signature, auths_level),
                         crypto_api_exception);
    } FC_LOG_AND_RETHROW()
 }

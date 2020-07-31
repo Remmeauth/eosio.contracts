@@ -114,12 +114,11 @@ namespace eosio {
        * @param account - the owner account to execute the execaction action for,
        * @param act - account action that will be executed,
        * @param pub_key - the public key which is tied to the corresponding account
-       * @param signed_by_pub_key - the signature that was signed by pub_key,
-       * @param payer - the account from which resources are debited.
+       * @param action_data_signature - the signature that was signed by pub_key.
        */
       [[eosio::action]]
       void execaction(const name &account, action& act, const block_timestamp &action_timestamp,
-                      const public_key &pub_key, const signature &signed_by_pub_key, const name &payer);
+                      const public_key &pub_key, const signature &action_data_signature);
 
       /**
        * Transfer action.
