@@ -174,6 +174,19 @@ public:
       return r;
    }
 
+   auto execaction(const name &account, const action &act, const time_point &action_timestamp, const crypto::public_key &pub_key,
+                   const crypto::signature &action_data_signature, const vector<permission_level>& auths) {
+      auto r = base_tester::push_action(N(rem.auth), N(execaction), auths, mvo()
+         ("account",  account)
+         ("act", act )
+         ("action_timestamp", action_timestamp )
+         ("pub_key", pub_key )
+         ("action_data_signature", action_data_signature )
+      );
+      produce_block();
+      return r;
+   }
+
    auto cleanupkeys(const vector<permission_level>& auths) {
       auto r = base_tester::push_action(N(rem.auth), N(cleanupkeys), auths, mvo());
       produce_block();
@@ -281,6 +294,25 @@ public:
    variant get_authkeys_tbl( const name& account ) {
       vector<char> data = get_row_by_account( N(rem.auth), N(rem.auth), N(authkeys), account );
       return data.empty() ? fc::variant() : abi_ser.binary_to_variant( "authkeys", data, abi_serializer::create_yield_function( abi_serializer_max_time ) );
+   }
+
+   variant get_execaction_tbl() {
+//      return get_singtable(N(rem.auth), N(rem.auth), N(execactions), "execactions");
+      vector<char> data = get_row_by_account( N(rem.auth), N(rem.auth), N(execactions), N(execactions) );
+      return data.empty() ? fc::variant() : abi_ser.binary_to_variant( "execactions", data, abi_serializer::create_yield_function( abi_serializer_max_time ) );
+   }
+
+   action get_action( const name& account, const action_name &name, const vector<permission_level> &auths,
+                      const abi_serializer &serializer, const variant_object &data ) {
+      string action_type_name = serializer.get_action_type(name);
+
+      action act;
+      act.account = account;
+      act.authorization = auths;
+      act.name = name;
+      act.data = serializer.variant_to_binary( action_type_name, data, abi_serializer::create_yield_function( abi_serializer_max_time ) );
+
+      return act;
    }
 
    variant get_singtable(const name& contract, const name& scope, const name &table, const string &type) {
@@ -1778,6 +1810,143 @@ BOOST_FIXTURE_TEST_CASE( keys_cleanup_test, rem_auth_tester ) {
       cleanupkeys(auths_level);
       data = get_authkeys_tbl();
       BOOST_REQUIRE_EQUAL(data["key"].as_int64(), 1);
+   } FC_LOG_AND_RETHROW()
+}
+
+BOOST_FIXTURE_TEST_CASE( execaction_test, rem_auth_tester ) {
+   try {
+      name account = N(proda);
+      name payer;
+      name to_account = N(prodb);
+      vector<permission_level> auths_level = { permission_level{N(prodb), config::active_name} };
+      vector<permission_level> auths_acc_level = { permission_level{account, config::active_name} };
+      // set account permission rem@code to the rem.auth (allow to execute the action on behalf of the account to rem.auth)
+      updateauth(account, N(rem.auth));
+      crypto::private_key key_priv = crypto::private_key::generate();
+      crypto::public_key key_pub   = key_priv.get_public_key();
+      const auto price_limit       = core_from_string("400.0000");
+      auto transfer_quantity       = core_from_string("100.0000");
+
+      sha256 digest = sha256::hash(join( { account.to_string(), pub_key_to_bin_string(key_pub), payer.to_string() } ));
+      auto signed_by_key = key_priv.sign(digest);
+
+      // token to transfer from proda to prodb
+      transfer(config::system_account_name, account, price_limit + transfer_quantity, "initial transfer");
+      addkeyacc(account, key_pub, signed_by_key, price_limit, payer, auths_acc_level);
+
+      action act = get_action(N(rem.token), N(transfer), auths_acc_level, abi_ser_token, mvo()
+                              ("from", account)
+                              ("to", to_account)
+                              ("quantity", transfer_quantity)
+                              ("memo", "test transfer"));
+
+      block_timestamp_type action_timestamp(control->head_block_time());
+      auto action_timestamp_data = fc::raw::pack(action_timestamp);
+      auto account_data = fc::raw::pack(account);
+      auto packed_action = fc::raw::pack(act);
+
+      auto payload = join( {
+                        string(account_data.begin(), account_data.end()), string(packed_action.begin(), packed_action.end()),
+                        string(action_timestamp_data.begin(), action_timestamp_data.end()), pub_key_to_bin_string(key_pub)
+                     } );
+      sha256 digest_execaction = sha256::hash(payload);
+      auto action_data_signature = key_priv.sign(digest_execaction);
+
+      auto account_balance_before = get_balance(account);
+      auto to_account_balance_before = get_balance(to_account);
+
+      execaction(account, act, action_timestamp, key_pub, action_data_signature, auths_level);
+
+      auto account_balance_after = get_balance(account);
+      auto to_account_balance_after = get_balance(to_account);
+
+      BOOST_REQUIRE_EQUAL(account_balance_before - transfer_quantity, account_balance_after);
+      BOOST_REQUIRE_EQUAL(to_account_balance_before + transfer_quantity, to_account_balance_after);
+
+      // missing authority of proda
+      BOOST_REQUIRE_THROW(execaction(N(prodc), act, action_timestamp, key_pub, action_data_signature, auths_level),
+                          eosio_assert_message_exception);
+
+      auths_level.push_back(permission_level{N(prodc), config::active_name});
+      action act_with_invalid_auth = get_action(N(rem.token), N(transfer), auths_level, abi_ser_token, mvo()
+                                                ("from", account)
+                                                ("to", to_account)
+                                                ("quantity", core_from_string("0.1000"))
+                                                ("memo", "test transfer"));
+
+      // authorization should contain one permission
+      BOOST_REQUIRE_THROW(execaction(account, act_with_invalid_auth, action_timestamp, key_pub, action_data_signature, auths_level),
+                          eosio_assert_message_exception);
+      // sign payload by another private key
+      crypto::private_key new_key_priv = crypto::private_key::generate();
+      crypto::public_key new_key_pub   = key_priv.get_public_key();
+      auto new_action_data_signature = new_key_priv.sign(digest_execaction);
+      // Error expected key different than recovered key
+      BOOST_REQUIRE_THROW(execaction(account, act, action_timestamp, key_pub, new_action_data_signature, auths_level),
+                          crypto_api_exception);
+      // account has no linked application keys
+      BOOST_REQUIRE_THROW(execaction(account, act, action_timestamp, new_key_pub, new_action_data_signature, auths_level),
+                        crypto_api_exception);
+   } FC_LOG_AND_RETHROW()
+}
+
+BOOST_FIXTURE_TEST_CASE( execaction_with_fake_account_test, rem_auth_tester ) {
+   try {
+      name from_account = N(proda);
+      name from_fake_account = N(prodb);
+      name to_account = N(prodc);
+      name payer;
+      vector<permission_level> auths_level = { permission_level{N(prodb), config::active_name} };
+      vector<permission_level> auths_acc_level = { permission_level{from_account, config::active_name} };
+      // set account permission rem@code to the rem.auth (allow to execute the action on behalf of the account to rem.auth)
+      updateauth(from_account, N(rem.auth));
+      updateauth(from_fake_account, N(rem.auth));
+
+      crypto::private_key from_account_priv_key      = crypto::private_key::generate();
+      crypto::public_key from_account_pub_key        = from_account_priv_key.get_public_key();
+      crypto::private_key from_fake_account_priv_key = crypto::private_key::generate();
+      crypto::public_key from_fake_account_pub_key   = from_fake_account_priv_key.get_public_key();
+
+      const auto price_limit = core_from_string("400.0000");
+      auto transfer_quantity = core_from_string("100.0000");
+
+      sha256 digest_from_acc = sha256::hash(join( { from_account.to_string(), pub_key_to_bin_string(from_account_pub_key), payer.to_string() } ));
+      sha256 digest_from_fake_acc = sha256::hash(join( { from_fake_account.to_string(), pub_key_to_bin_string(from_fake_account_pub_key), payer.to_string() } ));
+      auto signed_by_from_acc_key = from_account_priv_key.sign(digest_from_acc);
+      auto signed_by_from_fake_acc_key = from_fake_account_priv_key.sign(digest_from_fake_acc);
+
+      // token to transfer from proda to prodb
+      transfer(config::system_account_name, from_account, price_limit + transfer_quantity, "initial transfer");
+      transfer(config::system_account_name, from_fake_account, price_limit + transfer_quantity, "initial transfer");
+
+      addkeyacc(from_account, from_account_pub_key, signed_by_from_acc_key, price_limit, payer, auths_acc_level);
+      addkeyacc(from_fake_account, from_fake_account_pub_key, signed_by_from_fake_acc_key, price_limit, payer, auths_level);
+
+      action act = get_action(N(rem.token), N(transfer), auths_acc_level, abi_ser_token, mvo()
+         ("from", from_fake_account)
+         ("to", to_account)
+         ("quantity", transfer_quantity)
+         ("memo", "test transfer"));
+
+      block_timestamp_type action_timestamp(control->head_block_time());
+      auto action_timestamp_data = fc::raw::pack(action_timestamp);
+      auto account_data = fc::raw::pack(from_account);
+      auto packed_action = fc::raw::pack(act);
+
+      auto payload = join( {
+                              string(account_data.begin(), account_data.end()), string(packed_action.begin(), packed_action.end()),
+                              string(action_timestamp_data.begin(), action_timestamp_data.end()), pub_key_to_bin_string(from_account_pub_key)
+                           } );
+      sha256 digest_execaction = sha256::hash(payload);
+      auto action_data_signature = from_account_priv_key.sign(digest_execaction);
+
+      auto account_balance_before = get_balance(from_account);
+      auto to_account_balance_before = get_balance(to_account);
+
+      // Missing required authority prodb
+      BOOST_REQUIRE_THROW(
+         execaction(from_account, act, action_timestamp, from_account_pub_key, action_data_signature, auths_level),
+                    missing_auth_exception);
    } FC_LOG_AND_RETHROW()
 }
 

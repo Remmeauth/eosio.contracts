@@ -29,8 +29,10 @@ namespace eosio {
    class [[eosio::contract("rem.auth")]] auth : public attribute {
    public:
 
-      auth(name receiver, name code,  datastream<const char*> ds):attribute(receiver, code, ds),
-      authkeys_tbl(get_self(), get_self().value){};
+      auth(name receiver, name code,  datastream<const char*> ds)
+      :attribute(receiver, code, ds),
+      authkeys_tbl(get_self(), get_self().value),
+      execaction_tbl(get_self(), get_self().value){};
 
       /**
        * Add new authentication key action.
@@ -103,6 +105,21 @@ namespace eosio {
       [[eosio::action]]
       void buyauth(const name &account, const asset &quantity, const double &max_price);
 
+
+      /**
+       * Execaction action.
+       *
+       * @details Allows `account` to execute action `act` that signed by stored in auth public key `pub_key`.
+       *
+       * @param account - the owner account to execute the execaction action for,
+       * @param act - account action that will be executed,
+       * @param pub_key - the public key which is tied to the corresponding account
+       * @param action_data_signature - the signature that was signed by pub_key.
+       */
+      [[eosio::action]]
+      void execaction(const name &account, action& act, const block_timestamp &action_timestamp,
+                      const public_key &pub_key, const signature &action_data_signature);
+
       /**
        * Transfer action.
        *
@@ -139,6 +156,8 @@ namespace eosio {
 
       const time_point key_lifetime = time_point(days(360));
       const time_point key_cleanup_time = time_point(days(180)); // the time that should be passed after not_valid_after to delete key
+      const time_point action_expiration_time = time_point(days(30));
+      const time_point action_sig_expiration_time = time_point(hours(1));
       static constexpr int64_t key_storage_fee = 1'0000;
 
       enum class pub_key_algorithm : int8_t { ES256K1 = 0, ES256 };
@@ -183,6 +202,32 @@ namespace eosio {
 
       authkeys_idx authkeys_tbl;
 
+      struct [[eosio::table]] execaction_data {
+         uint64_t          key;
+         checksum256       action_id;
+         block_timestamp   action_timestamp;
+
+         uint64_t primary_key() const { return key; }
+
+         fixed_bytes<32> by_action_id() const { return get_action_hash(action_id); }
+
+         static fixed_bytes<32> get_action_hash(const checksum256 &hash) {
+            const uint128_t *p128 = reinterpret_cast<const uint128_t *>(&hash);
+            fixed_bytes<32> k;
+            k.data()[0] = p128[0];
+            k.data()[1] = p128[1];
+            return k;
+         }
+
+         // explicit serialization macro is not necessary, used here only to improve compilation time
+         EOSLIB_SERIALIZE( execaction_data, (key)(action_id)(action_timestamp) )
+      };
+
+      typedef multi_index<"execactions"_n, execaction_data,
+         indexed_by<"byhash"_n, const_mem_fun <execaction_data, fixed_bytes<32>, &execaction_data::by_action_id>>
+         > execaction_index;
+      execaction_index execaction_tbl;
+
       struct [[eosio::table]] account {
          asset    balance;
 
@@ -200,6 +245,8 @@ namespace eosio {
       asset get_balance(const name& token_contract_account, const name& owner, const symbol& sym);
       asset get_purchase_fee(const asset &quantity_auth);
       double get_account_discount(const name &account) const;
+
+      void cleanup_actions();
 
       void check_permission(const name& issuer, const name& receiver, int32_t ptype) const;
       bool need_confirm(int32_t ptype) const;
