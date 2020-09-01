@@ -67,6 +67,25 @@ namespace eosio {
                      const public_key &pub_key, const signature &signed_by_pub_key, const asset &price_limit,
                      const name &payer);
 
+
+      /**
+       * Replace authentication key action.
+       *
+       * @details Replace authentication key by using correspond to the account authentication key.
+       *
+       * @param account - the owner account to execute the addkeyapp action for,
+       * @param new_pub_key - the public key that will be added,
+       * @param signed_by_new_pub_key - the signature that was signed by new_pub_key,
+       * @param pub_key - the public key which is tied to the corresponding account,
+       * @param sign_by_key - the signature that was signed by pub_key,
+       * @param price_limit - the maximum price which will be charged for storing the key can be in REM and AUTH,
+       * @param payer - the account from which resources are debited.
+       */
+      [[eosio::action]]
+      void replacekey(const name &account, const public_key &new_pub_key, const signature &signed_by_new_pub_key,
+                      const public_key &pub_key, const signature &signed_by_pub_key, const asset &price_limit,
+                      const name &payer);
+
       /**
        * Revoke active authentication key action.
        *
@@ -155,6 +174,7 @@ namespace eosio {
       static constexpr name system_account = "rem"_n;
 
       const time_point key_lifetime = time_point(days(360));
+      const time_point key_replacement_timedelta = time_point(days(30));
       const time_point key_cleanup_time = time_point(days(180)); // the time that should be passed after not_valid_after to delete key
       const time_point action_expiration_time = time_point(days(30));
       const time_point action_sig_expiration_time = time_point(hours(1));

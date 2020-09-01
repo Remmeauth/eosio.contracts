@@ -142,6 +142,59 @@ namespace eosio {
       cleanupkeys();
    }
 
+   void auth::replacekey(const name &account, const public_key &new_pub_key, const signature &signed_by_new_pub_key,
+                         const public_key &pub_key, const signature &signed_by_pub_key, const asset &price_limit,
+                         const name &payer)
+   {
+      bool is_payer = bool(payer);
+      name payer_name = is_payer ? payer : account;
+      if (is_payer) { require_auth(payer_name); }
+
+      string account_str = account.to_string();
+      string payer_str = payer.to_string();
+      vector<char> account_data(account_str.begin(), account_str.end());
+      vector<char> new_pub_key_data = get_pub_key_data(new_pub_key);
+      vector<char> pub_key_data = get_pub_key_data(pub_key);
+      vector<char> payer_data(payer_str.begin(), payer_str.end());
+
+      vector<char> payload = join({ account_data, new_pub_key_data, pub_key_data, payer_data });
+      checksum256 digest = sha256(payload.data(), payload.size());
+
+      public_key expected_new_pub_key = recover_key(digest, signed_by_new_pub_key);
+      public_key expected_pub_key = recover_key(digest, signed_by_pub_key);
+
+      check(expected_new_pub_key == new_pub_key, "expected key different than recovered new application key");
+      check(expected_pub_key == pub_key, "expected key different than recovered application key");
+
+      auto authkeys_idx = authkeys_tbl.get_index<"bypubkey"_n>();
+      auto it = authkeys_idx.find(authkeys::get_pub_key_hash(pub_key));
+
+      time_point ct = current_time_point();
+      bool is_before_time_valid = ct > it->not_valid_before.to_time_point();
+      bool is_after_time_valid = ct < it->not_valid_after.to_time_point() + key_replacement_timedelta;
+
+      check(it != authkeys_idx.end(), "account has no active application keys");
+      check(it->owner == account, "owner of the key does not match the account");
+      check(is_before_time_valid && is_after_time_valid, "key expired");
+      check(!it->revoked_at, "key expired");
+
+      authkeys_tbl.modify(*it, get_self(), [&](auto &r) {
+         r.revoked_at = ct.sec_since_epoch();
+      });
+
+      authkeys_tbl.emplace(get_self(), [&](auto &k) {
+         k.key              = authkeys_tbl.available_primary_key();
+         k.owner            = account;
+         k.pub_key          = new_pub_key;
+         k.not_valid_before = current_time_point();
+         k.not_valid_after  = current_time_point() + key_lifetime;
+         k.revoked_at       = 0; // if not revoked == 0
+      });
+
+      sub_storage_fee(payer_name, price_limit);
+      cleanupkeys();
+   }
+
    auto auth::find_active_appkey(const name &account, const public_key &key)
    {
       auto authkeys_idx = authkeys_tbl.get_index<"byname"_n>();
