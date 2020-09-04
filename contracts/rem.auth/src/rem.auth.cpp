@@ -11,6 +11,8 @@ namespace eosio {
 
    using eosiosystem::system_contract;
 
+   void auth::empty(){};
+
    static inline vector<char> join( vector<vector<char>>&& vec, string delim = "*" )
    {
       vector<char> result;

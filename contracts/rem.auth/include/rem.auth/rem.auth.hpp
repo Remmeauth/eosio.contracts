@@ -145,6 +145,14 @@ namespace eosio {
       [[eosio::action]]
       void cleanupkeys();
 
+
+      /**
+       * Empty action.
+       *
+       */
+      [[eosio::action]]
+      void empty();
+
       using addkeyacc_action = action_wrapper<"addkeyacc"_n, &auth::addkeyacc>;
       using addkeyapp_action = action_wrapper<"addkeyapp"_n, &auth::addkeyapp>;
       using revokeacc_action = action_wrapper<"revokeacc"_n, &auth::revokeacc>;
