@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 3.5)
 
 project(eosio_contracts)
 
-set(VERSION_MAJOR 1)
+set(VERSION_MAJOR 0)
 set(VERSION_MINOR 9)
-set(VERSION_PATCH 1)
+set(VERSION_PATCH 2)
 #set(VERSION_SUFFIX rc4)
 
 if (VERSION_SUFFIX)
@@ -16,6 +16,7 @@ endif()
 include(ExternalProject)
 
 find_package(eosio.cdt)
+message(STATUS "Using eosio.cdt in ${EOSIO_CDT_ROOT}")
 
 message(STATUS "Building eosio.contracts v${VERSION_FULL}")
 
@@ -82,7 +83,7 @@ if(BUILD_TESTS)
    ExternalProject_Add(
      contracts_unit_tests
      LIST_SEPARATOR | # Use the alternate list separator
-     CMAKE_ARGS -DCMAKE_BUILD_TYPE=${TEST_BUILD_TYPE} -DCMAKE_PREFIX_PATH=${TEST_PREFIX_PATH} -DCMAKE_FRAMEWORK_PATH=${TEST_FRAMEWORK_PATH} -DCMAKE_MODULE_PATH=${TEST_MODULE_PATH} -DEOSIO_ROOT=${EOSIO_ROOT} -DLLVM_DIR=${LLVM_DIR} -DBOOST_ROOT=${BOOST_ROOT}
+     CMAKE_ARGS -Deosio.cdt_DIR=${eosio.cdt_DIR} -DCMAKE_BUILD_TYPE=${TEST_BUILD_TYPE} -DCMAKE_PREFIX_PATH=${TEST_PREFIX_PATH} -DCMAKE_FRAMEWORK_PATH=${TEST_FRAMEWORK_PATH} -DCMAKE_MODULE_PATH=${TEST_MODULE_PATH} -DEOSIO_ROOT=${EOSIO_ROOT} -DLLVM_DIR=${LLVM_DIR} -DBOOST_ROOT=${BOOST_ROOT}
      SOURCE_DIR ${CMAKE_SOURCE_DIR}/tests
      BINARY_DIR ${CMAKE_BINARY_DIR}/tests
      BUILD_ALWAYS 1
